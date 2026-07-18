@@ -6,13 +6,12 @@ import {
   HttpStatus,
   Logger,
 } from '@nestjs/common';
-import type { Request, Response } from 'express';
+import type { Response } from 'express';
 
 interface ErrorResponse {
   statusCode: number;
-  message: string | string[];
-  error: string;
-  path: string;
+  message: string;
+  errors: string[];
   timestamp: string;
 }
 
@@ -23,11 +22,10 @@ export class HttpExceptionFilter implements ExceptionFilter {
   catch(exception: unknown, host: ArgumentsHost): void {
     const ctx = host.switchToHttp();
     const response = ctx.getResponse<Response>();
-    const request = ctx.getRequest<Request>();
 
     let status: number;
-    let message: string | string[];
-    let error: string;
+    let message: string;
+    let errors: string[];
 
     if (exception instanceof HttpException) {
       status = exception.getStatus();
@@ -35,22 +33,31 @@ export class HttpExceptionFilter implements ExceptionFilter {
 
       if (typeof exceptionResponse === 'string') {
         message = exceptionResponse;
-        error = exception.name;
+        errors = [exceptionResponse];
       } else if (
         typeof exceptionResponse === 'object' &&
         exceptionResponse !== null
       ) {
         const body = exceptionResponse as Record<string, unknown>;
-        message = (body.message as string | string[]) ?? exception.message;
-        error = (body.error as string) ?? exception.name;
+        const rawMessage = body.message;
+        if (Array.isArray(rawMessage)) {
+          message = 'Validation failed';
+          errors = rawMessage.map(String);
+        } else if (typeof rawMessage === 'string') {
+          message = rawMessage;
+          errors = [rawMessage];
+        } else {
+          message = exception.message;
+          errors = [exception.message];
+        }
       } else {
         message = exception.message;
-        error = exception.name;
+        errors = [exception.message];
       }
     } else {
       status = HttpStatus.INTERNAL_SERVER_ERROR;
       message = 'Internal server error';
-      error = 'InternalServerError';
+      errors = ['Internal server error'];
 
       this.logger.error(
         `Unhandled exception: ${exception instanceof Error ? exception.message : String(exception)}`,
@@ -61,8 +68,7 @@ export class HttpExceptionFilter implements ExceptionFilter {
     const body: ErrorResponse = {
       statusCode: status,
       message,
-      error,
-      path: request.url,
+      errors,
       timestamp: new Date().toISOString(),
     };
 

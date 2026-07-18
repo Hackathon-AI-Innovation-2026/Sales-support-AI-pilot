@@ -1,20 +1,21 @@
 # 06 — Deployment (Docker Compose)
 
 ## Mục tiêu
+
 Đóng gói và chạy toàn bộ hệ thống bằng Docker Compose với một lệnh duy nhất.
 
 ---
 
 ## Services
 
-| Service | Image | Port | Depends On |
-|---|---|---|---|
-| `postgres` | postgres:16-alpine | 5432 | — |
-| `qdrant` | qdrant/qdrant:latest | 6333, 6334 | — |
-| `backend` | ./backend | 4000 | postgres |
-| `ml-service` | ./ml-service | 8001 | — |
-| `ai-service` | ./ai-service | 8002 | qdrant |
-| `frontend` | ./frontend | 3000 | backend |
+| Service      | Image                | Port       | Depends On |
+| ------------ | -------------------- | ---------- | ---------- |
+| `postgres`   | postgres:16-alpine   | 5432       | —          |
+| `qdrant`     | qdrant/qdrant:latest | 6333, 6334 | —          |
+| `backend`    | ./backend            | 3001       | postgres   |
+| `ml-service` | ./ml-service         | 8001       | —          |
+| `ai-service` | ./ai-service         | 8002       | qdrant     |
+| `frontend`   | ./frontend           | 3000       | backend    |
 
 ---
 
@@ -27,77 +28,77 @@
 version: "3.9"
 
 services:
-  postgres:
-    image: postgres:16-alpine
-    environment:
-      POSTGRES_DB: sales_copilot
-      POSTGRES_USER: admin
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-    ports:
-      - "5432:5432"
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U admin -d sales_copilot"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
+    postgres:
+        image: postgres:16-alpine
+        environment:
+            POSTGRES_DB: sales_copilot
+            POSTGRES_USER: admin
+            POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+        ports:
+            - "5432:5432"
+        volumes:
+            - postgres_data:/var/lib/postgresql/data
+        healthcheck:
+            test: ["CMD-SHELL", "pg_isready -U admin -d sales_copilot"]
+            interval: 10s
+            timeout: 5s
+            retries: 5
 
-  qdrant:
-    image: qdrant/qdrant:latest
-    ports:
-      - "6333:6333"
-      - "6334:6334"
-    volumes:
-      - qdrant_data:/qdrant/storage
+    qdrant:
+        image: qdrant/qdrant:latest
+        ports:
+            - "6333:6333"
+            - "6334:6334"
+        volumes:
+            - qdrant_data:/qdrant/storage
 
-  backend:
-    build: ./backend
-    ports:
-      - "4000:4000"
-    environment:
-      DATABASE_URL: postgresql://admin:${POSTGRES_PASSWORD}@postgres:5432/sales_copilot
-      JWT_SECRET: ${JWT_SECRET}
-      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET}
-      ML_SERVICE_URL: http://ml-service:8001
-      AI_SERVICE_URL: http://ai-service:8002
-    depends_on:
-      postgres:
-        condition: service_healthy
-    command: >
-      sh -c "npx prisma migrate deploy && npx prisma db seed && node dist/main.js"
+    backend:
+        build: ./backend
+        ports:
+            - "3001:3001"
+        environment:
+            DATABASE_URL: postgresql://admin:${POSTGRES_PASSWORD}@postgres:5432/sales_copilot
+            JWT_SECRET: ${JWT_SECRET}
+            JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET}
+            ML_SERVICE_URL: http://ml-service:8001
+            AI_SERVICE_URL: http://ai-service:8002
+        depends_on:
+            postgres:
+                condition: service_healthy
+        command: >
+            sh -c "npx prisma migrate deploy && npx prisma db seed && node dist/main.js"
 
-  ml-service:
-    build: ./ml-service
-    ports:
-      - "8001:8001"
-    volumes:
-      - ./ml-service/app/models:/app/models
+    ml-service:
+        build: ./ml-service
+        ports:
+            - "8001:8001"
+        volumes:
+            - ./ml-service/app/models:/app/models
 
-  ai-service:
-    build: ./ai-service
-    ports:
-      - "8002:8002"
-    environment:
-      GEMINI_API_KEY: ${GEMINI_API_KEY}
-      OPENAI_API_KEY: ${OPENAI_API_KEY}
-      QDRANT_URL: http://qdrant:6333
-      LLM_PROVIDER: gemini
-    depends_on:
-      - qdrant
+    ai-service:
+        build: ./ai-service
+        ports:
+            - "8002:8002"
+        environment:
+            GEMINI_API_KEY: ${GEMINI_API_KEY}
+            OPENAI_API_KEY: ${OPENAI_API_KEY}
+            QDRANT_URL: http://qdrant:6333
+            LLM_PROVIDER: gemini
+        depends_on:
+            - qdrant
 
-  frontend:
-    build: ./frontend
-    ports:
-      - "3000:3000"
-    environment:
-      NEXT_PUBLIC_API_URL: http://localhost:4000
-    depends_on:
-      - backend
+    frontend:
+        build: ./frontend
+        ports:
+            - "3000:3000"
+        environment:
+            NEXT_PUBLIC_API_URL: http://localhost:3001
+        depends_on:
+            - backend
 
 volumes:
-  postgres_data:
-  qdrant_data:
+    postgres_data:
+    qdrant_data:
 ```
 
 - [ ] Tạo `docker-compose.yml` tại root
@@ -139,7 +140,7 @@ COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/prisma ./prisma
 COPY --from=builder /app/package.json .
-EXPOSE 4000
+EXPOSE 3001
 CMD ["node", "dist/main.js"]
 ```
 
@@ -229,7 +230,7 @@ docker compose exec ai-service python app/knowledge/ingest.py
 
 echo "✅ All systems ready!"
 echo "Frontend:   http://localhost:3000"
-echo "Backend:    http://localhost:4000"
+echo "Backend:    http://localhost:3001"
 echo "ML Service: http://localhost:8001"
 echo "AI Service: http://localhost:8002"
 ```
@@ -242,12 +243,12 @@ echo "AI Service: http://localhost:8002"
 
 ### TASK-DEV-08 — Health Checks & Monitoring
 
-| Endpoint | Mô tả |
-|---|---|
-| `GET localhost:4000/health` | Backend healthy |
+| Endpoint                    | Mô tả              |
+| --------------------------- | ------------------ |
+| `GET localhost:3001/health` | Backend healthy    |
 | `GET localhost:8001/health` | ML Service healthy |
 | `GET localhost:8002/health` | AI Service healthy |
-| `GET localhost:6333/health` | Qdrant healthy |
+| `GET localhost:6333/health` | Qdrant healthy     |
 
 - [ ] Tất cả services có `/health` endpoint
 - [ ] Docker Compose healthcheck cho postgres và qdrant
@@ -286,12 +287,12 @@ sales-support-ai-copilot/          ← Root
 - [ ] Mô tả hệ thống
 - [ ] Prerequisites: Docker, Docker Compose, Git
 - [ ] Quick Start:
-  ```bash
-  git clone <repo>
-  cp .env.example .env
-  # Điền GEMINI_API_KEY vào .env
-  bash scripts/start.sh
-  ```
+    ```bash
+    git clone <repo>
+    cp .env.example .env
+    # Điền GEMINI_API_KEY vào .env
+    bash scripts/start.sh
+    ```
 - [ ] Demo credentials: `sales@shb.vn / demo123`, `manager@shb.vn / demo123`
 - [ ] Architecture diagram
 - [ ] Feature list với screenshots (sau khi có UI)
