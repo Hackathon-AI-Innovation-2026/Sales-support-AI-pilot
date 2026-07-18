@@ -2,6 +2,8 @@ import uvicorn
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.config import settings
+from app.model.loader import model_loader
+from app.predict.router import router as predict_router
 
 app = FastAPI(
     title="SHB Lead Scoring ML Service",
@@ -18,13 +20,15 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Đăng ký Predict Router
+app.include_router(predict_router)
+
 @app.get("/health")
 async def health_check():
-    import os
-    model_exists = os.path.exists(settings.MODEL_PATH)
+    model_loaded = model_loader.model is not None
     return {
         "status": "healthy",
-        "modelLoaded": model_exists
+        "modelLoaded": model_loaded
     }
 
 if __name__ == "__main__":

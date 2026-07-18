@@ -155,5 +155,25 @@ def main():
         json.dump(sorted_importance, f, indent=4, ensure_ascii=False)
     print(f"Đã lưu feature importance tại: {importance_path}")
 
+    # Lưu siêu dữ liệu mô hình (Model Info Metadata)
+    from datetime import datetime
+    model_info = {
+        "version": "1.0.0",
+        "algorithm": "LightGBM",
+        "trainedAt": datetime.now().strftime("%Y-%m-%d"),
+        "features": features,
+        "performance": {
+            "aucRoc": round(auc_roc, 4),
+            "precision": round(precision, 4),
+            "recall": round(recall, 4),
+            "f1Score": round(f1, 4)
+        }
+    }
+    info_path = "model/model_info.json"
+    with open(info_path, "w", encoding="utf-8") as f:
+        json.dump(model_info, f, indent=4, ensure_ascii=False)
+    print(f"Đã lưu model info tại: {info_path}")
+
 if __name__ == "__main__":
     main()
+
