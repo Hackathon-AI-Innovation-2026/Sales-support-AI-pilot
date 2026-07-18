@@ -1,86 +1,140 @@
 "use client"
 
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
-import { Sparkles, TrendingUp, Users, CheckSquare } from "lucide-react"
+import * as React from "react"
+import { useQuery, useQueryClient } from "@tanstack/react-query"
+import { api } from "@/lib/api/axios"
+import { SummaryCards } from "@/components/dashboard/SummaryCards"
+import { SalesFunnel } from "@/components/dashboard/SalesFunnel"
+import { HotLeadsTable } from "@/components/dashboard/HotLeadsTable"
+import { RevenueForecast } from "@/components/dashboard/RevenueForecast"
+import { ConversionTrend } from "@/components/dashboard/ConversionTrend"
+import { CardSkeleton, TableSkeleton } from "@/components/common/Skeleton"
+import { Button } from "@/components/ui/button"
+import { RefreshCw, LayoutDashboard } from "lucide-react"
 
 export default function DashboardPage() {
+  const queryClient = useQueryClient()
+
+  // Fetch summary stats
+  const { data: summary, isLoading: isSummaryLoading } = useQuery({
+    queryKey: ["dashboard", "summary"],
+    queryFn: () => api.get("/dashboard/summary").then((res) => res.data),
+  })
+
+  // Fetch conversion rate
+  const { data: rate, isLoading: isRateLoading } = useQuery({
+    queryKey: ["dashboard", "rate"],
+    queryFn: () => api.get("/dashboard/conversion-rate").then((res) => res.data),
+  })
+
+  // Fetch sales funnel stages
+  const { data: funnel, isLoading: isFunnelLoading } = useQuery({
+    queryKey: ["dashboard", "funnel"],
+    queryFn: () => api.get("/dashboard/funnel").then((res) => res.data),
+  })
+
+  // Fetch revenue forecast
+  const { data: forecast, isLoading: isForecastLoading } = useQuery({
+    queryKey: ["dashboard", "forecast"],
+    queryFn: () => api.get("/dashboard/revenue-forecast").then((res) => res.data),
+  })
+
+  // Fetch hot leads
+  const { data: hotLeads, isLoading: isHotLeadsLoading } = useQuery({
+    queryKey: ["dashboard", "hotLeads"],
+    queryFn: () => api.get("/dashboard/hot-leads?limit=10").then((res) => res.data),
+  })
+
+  const isLoading =
+    isSummaryLoading ||
+    isRateLoading ||
+    isFunnelLoading ||
+    isForecastLoading ||
+    isHotLeadsLoading
+
+  const handleRefresh = async () => {
+    // Invalidate all queryKeys starting with ["dashboard"] to pull fresh data
+    await queryClient.invalidateQueries({ queryKey: ["dashboard"] })
+  }
+
+  if (isLoading) {
+    return (
+      <div className="space-y-6">
+        <div className="flex justify-between items-center">
+          <div className="space-y-1">
+            <h1 className="text-2xl font-bold tracking-tight">Tổng quan Báo cáo</h1>
+            <p className="text-muted-foreground text-sm">Đang tải báo cáo hệ thống bán hàng...</p>
+          </div>
+        </div>
+        {/* KPI Cards Skeletons */}
+        <CardSkeleton count={4} />
+        {/* Tables & Charts Skeletons */}
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+          <div className="lg:col-span-2">
+            <TableSkeleton rows={4} cols={4} />
+          </div>
+          <div>
+            <TableSkeleton rows={4} cols={2} />
+          </div>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight">Dashboard</h1>
-        <p className="text-muted-foreground">Welcome back, Nguyễn Văn A. Here is your sales activity overview.</p>
+      {/* Page Header */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight text-foreground flex items-center gap-2">
+            <LayoutDashboard className="w-6 h-6 text-primary" />
+            Tổng quan Báo cáo
+          </h1>
+          <p className="text-muted-foreground text-sm">
+            Hệ thống báo cáo hiệu suất leads và dự báo doanh số
+          </p>
+        </div>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={handleRefresh}
+          className="flex items-center gap-1.5 cursor-pointer text-xs font-semibold"
+        >
+          <RefreshCw className="w-3.5 h-3.5" />
+          Làm mới
+        </Button>
       </div>
 
-      {/* Grid of Metric Cards */}
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <Card className="bg-card border-border shadow-sm">
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-              Total Active Leads
-            </CardTitle>
-            <Users className="w-4 h-4 text-primary" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">128</div>
-            <p className="text-[10px] text-green-500 font-semibold mt-1">
-              +12% from last week
-            </p>
-          </CardContent>
-        </Card>
+      {/* Row 1: KPI Cards */}
+      <SummaryCards
+        totalLeads={summary?.totalLeads ?? 0}
+        wonThisMonth={summary?.wonThisMonth ?? 0}
+        conversionRate={rate?.conversionRate ?? 0}
+        activeTasks={summary?.activeTasks ?? 0}
+      />
 
-        <Card className="bg-card border-border shadow-sm">
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-              Won This Month
-            </CardTitle>
-            <TrendingUp className="w-4 h-4 text-success" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">34</div>
-            <p className="text-[10px] text-green-500 font-semibold mt-1">
-              +8% conversion rate
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-card border-border shadow-sm">
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-              AI Priority Leads
-            </CardTitle>
-            <Sparkles className="w-4 h-4 text-warning" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">18</div>
-            <p className="text-[10px] text-amber-500 font-semibold mt-1">
-              Score ≥ 80 (High priority)
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-card border-border shadow-sm">
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-              Active Tasks Today
-            </CardTitle>
-            <CheckSquare className="w-4 h-4 text-red-500" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">8</div>
-            <p className="text-[10px] text-red-500 font-semibold mt-1">
-              3 tasks overdue
-            </p>
-          </CardContent>
-        </Card>
+      {/* Row 2: Funnel Chart & Hot Leads Table */}
+      <div className="grid gap-6 lg:grid-cols-6">
+        <div className="lg:col-span-3 flex flex-col">
+          <SalesFunnel data={funnel ?? []} />
+        </div>
+        <div className="lg:col-span-3 flex flex-col">
+          <HotLeadsTable leads={hotLeads ?? []} />
+        </div>
       </div>
 
-      {/* Main Content Area Placeholder */}
-      <Card className="p-6 bg-card border-border shadow-sm">
-        <h2 className="text-lg font-bold mb-2">Platform Overview & Activity</h2>
-        <p className="text-sm text-muted-foreground">
-          This dashboard displays simulated banking data. Use the sidebar to navigate between Leads, Customers, and Tasks modules. The AI Copilot engine is online and monitoring system changes.
-        </p>
-      </Card>
+      {/* Row 3: Revenue Forecast & Weekly Conversion Trend */}
+      <div className="grid gap-6 lg:grid-cols-6">
+        <div className="lg:col-span-3 flex flex-col">
+          <RevenueForecast
+            totalForecast={forecast?.totalForecast ?? 0}
+            details={forecast?.details ?? []}
+          />
+        </div>
+        <div className="lg:col-span-3 flex flex-col">
+          <ConversionTrend />
+        </div>
+      </div>
     </div>
   )
 }
