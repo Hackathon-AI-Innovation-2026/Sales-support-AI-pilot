@@ -5,11 +5,12 @@ import { UsersService } from '../users/users.service';
 import { User } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
 
+export const REFRESH_TOKEN_EXPIRES = 30 * 24 * 60 * 60; // 30 days
+export const JWT_ACCESS_EXPIRES = 15 * 60; // 15 minutes
+
 @Injectable()
 export class AuthService {
   private readonly jwtSecret: string;
-  private readonly accessExpiry: number;
-  private readonly refreshExpiry: number;
 
   constructor(
     private readonly usersService: UsersService,
@@ -17,20 +18,11 @@ export class AuthService {
     private readonly configService: ConfigService,
   ) {
     this.jwtSecret = this.configService.getOrThrow<string>('JWT_ACCESS_SECRET');
-    this.accessExpiry = Number(
-      this.configService.get<number>('JWT_ACCESS_EXPIRES_IN_SECONDS') ?? 900,
-    );
-    // Default to 7 days (604800 seconds) if not specified in env
-    this.refreshExpiry = Number(
-      this.configService.get<number>('REFRESH_TOKEN_EXPIRES_IN_SECONDS') ??
-        604800,
-    );
   }
 
   async validateUser(email: string, pass: string): Promise<any> {
     const user = await this.usersService.findByEmail(email);
     if (user && bcrypt.compareSync(pass, user.passwordHash)) {
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const { passwordHash, refreshTokenHash, ...result } = user;
       return result;
     }
@@ -42,14 +34,14 @@ export class AuthService {
 
     const accessToken = await this.jwtService.signAsync(payload, {
       secret: this.jwtSecret,
-      expiresIn: `${this.accessExpiry}s`,
+      expiresIn: `${JWT_ACCESS_EXPIRES}s`,
     });
 
     const refreshToken = await this.jwtService.signAsync(
       { sub: user.id },
       {
         secret: this.jwtSecret,
-        expiresIn: `${this.refreshExpiry}s`,
+        expiresIn: `${REFRESH_TOKEN_EXPIRES}s`,
       },
     );
 
@@ -94,7 +86,7 @@ export class AuthService {
       const accessPayload = { email: user.email, sub: user.id };
       const accessToken = await this.jwtService.signAsync(accessPayload, {
         secret: this.jwtSecret,
-        expiresIn: `${this.accessExpiry}s`,
+        expiresIn: `${REFRESH_TOKEN_EXPIRES}s`,
       });
 
       // Generate new refresh token (rotation)
@@ -102,7 +94,7 @@ export class AuthService {
         { sub: user.id },
         {
           secret: this.jwtSecret,
-          expiresIn: `${this.refreshExpiry}s`,
+          expiresIn: `${REFRESH_TOKEN_EXPIRES}s`,
         },
       );
 
