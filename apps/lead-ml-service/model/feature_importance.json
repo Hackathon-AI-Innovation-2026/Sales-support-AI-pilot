@@ -1,0 +1,14 @@
+{
+    "income": 0.34796299940956504,
+    "age": 0.20980122023223774,
+    "website_visit_count": 0.0816768352686479,
+    "email_open_count": 0.08049596536114938,
+    "loan_inquiry_count": 0.0568785672111789,
+    "salary_account": 0.051171029324936036,
+    "email_click_count": 0.0371974020862035,
+    "branch_visit_count": 0.03542609722495572,
+    "has_saving": 0.034835662271206456,
+    "call_count": 0.033654792363707935,
+    "has_credit_card": 0.01731942530997835,
+    "has_insurance": 0.013580003936233025
+}

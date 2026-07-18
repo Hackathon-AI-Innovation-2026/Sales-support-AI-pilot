@@ -1,0 +1,25 @@
+{
+    "version": "1.0.0",
+    "algorithm": "LightGBM",
+    "trainedAt": "2026-07-18",
+    "features": [
+        "income",
+        "age",
+        "salary_account",
+        "email_open_count",
+        "email_click_count",
+        "website_visit_count",
+        "loan_inquiry_count",
+        "branch_visit_count",
+        "call_count",
+        "has_saving",
+        "has_credit_card",
+        "has_insurance"
+    ],
+    "performance": {
+        "aucRoc": 0.8493,
+        "precision": 0.862,
+        "recall": 0.7507,
+        "f1Score": 0.8025
+    }
+}
