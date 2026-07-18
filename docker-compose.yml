@@ -107,8 +107,6 @@ services:
             args:
                 - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL:-/api/v1}
         restart: unless-stopped
-        ports:
-            - "${WEB_PORT:-3000}:3000"
         environment:
             - PORT=3000
         env_file:
