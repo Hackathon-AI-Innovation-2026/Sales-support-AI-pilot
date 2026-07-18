@@ -12,6 +12,7 @@ import { LeadsModule } from './modules/leads/leads.module';
 import { LeadScoringModule } from './modules/lead-scoring/lead-scoring.module';
 import { RecommendationModule } from './modules/recommendation/recommendation.module';
 import { AiModule } from './modules/ai/ai.module';
+import { TasksModule } from './modules/tasks/tasks.module';
 
 @Module({
   imports: [
@@ -31,6 +32,7 @@ import { AiModule } from './modules/ai/ai.module';
     LeadScoringModule,
     RecommendationModule,
     AiModule,
+    TasksModule,
   ],
   controllers: [],
   providers: [],
