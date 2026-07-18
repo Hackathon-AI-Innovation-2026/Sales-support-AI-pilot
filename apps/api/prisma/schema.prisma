@@ -1,0 +1,239 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum UserRole {
+  SALES
+  MANAGER
+  ADMIN
+}
+
+enum ProductType {
+  LOAN
+  SAVING
+  CREDIT_CARD
+  INSURANCE
+  INVESTMENT
+}
+
+enum InteractionType {
+  EMAIL_OPEN
+  EMAIL_CLICK
+  CALL
+  BRANCH_VISIT
+  WEBSITE_VISIT
+  APP_LOGIN
+  LOAN_INQUIRY
+}
+
+enum LeadStatus {
+  NEW
+  QUALIFIED
+  CONTACTED
+  PROPOSAL
+  NEGOTIATION
+  WON
+  LOST
+}
+
+enum RecommendedAction {
+  CALL
+  EMAIL
+  MEETING
+  WAIT
+}
+
+enum Priority {
+  HIGH
+  MEDIUM
+  LOW
+}
+
+enum ContentType {
+  EMAIL
+  PITCH
+  CALL_SCRIPT
+}
+
+enum TaskType {
+  CALL
+  EMAIL
+  MEETING
+}
+
+enum TaskStatus {
+  TODO
+  IN_PROGRESS
+  DONE
+  FAILED
+}
+
+model User {
+  id           String   @id @default(uuid())
+  email        String   @unique
+  passwordHash String
+  fullName     String
+  role         UserRole @default(SALES)
+  createdAt    DateTime @default(now())
+
+  leads Lead[]
+  tasks SalesTask[]
+}
+
+model Customer {
+  id            String   @id @default(uuid())
+  fullName      String
+  email         String?  @unique
+  phone         String?
+  age           Int?
+  gender        String?
+  occupation    String?
+  income        Float?
+  city          String?
+  salaryAccount Boolean  @default(false)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  products     CustomerProduct[]
+  interactions CustomerInteraction[]
+  leads        Lead[]
+
+  @@index([city])
+  @@index([income])
+  @@index([fullName])
+}
+
+model CustomerProduct {
+  id          String      @id @default(uuid())
+  customerId  String
+  productType ProductType
+  openedDate  DateTime?
+  status      String      @default("ACTIVE")
+
+  customer Customer @relation(fields: [customerId], references: [id])
+
+  @@index([customerId])
+  @@index([customerId, productType])
+  @@index([status])
+}
+
+model CustomerInteraction {
+  id              String          @id @default(uuid())
+  customerId      String
+  interactionType InteractionType
+  occurredAt      DateTime        @default(now())
+  metadata        Json?
+
+  customer Customer @relation(fields: [customerId], references: [id])
+
+  @@index([customerId])
+  @@index([customerId, interactionType])
+  @@index([customerId, occurredAt(sort: Desc)])
+  @@index([occurredAt(sort: Desc)])
+}
+
+model Lead {
+  id                String     @id @default(uuid())
+  customerId        String
+  assignedTo        String?
+  interestedProduct String?
+  status            LeadStatus @default(NEW)
+  createdAt         DateTime   @default(now())
+  updatedAt         DateTime   @updatedAt
+
+  customer          Customer                @relation(fields: [customerId], references: [id])
+  assignedUser      User?                   @relation(fields: [assignedTo], references: [id])
+  scores            LeadScore[]
+  recommendations   ProductRecommendation[]
+  actions           Recommendation[]
+  tasks             SalesTask[]
+  generatedContents GeneratedContent[]
+
+  @@index([customerId])
+  @@index([assignedTo])
+  @@index([status])
+  @@index([status, createdAt(sort: Desc)])
+  @@index([assignedTo, status])
+}
+
+model LeadScore {
+  id                    String   @id @default(uuid())
+  leadId                String
+  score                 Float
+  conversionProbability Float
+  topFeatures           Json?
+  predictedAt           DateTime @default(now())
+
+  lead Lead @relation(fields: [leadId], references: [id])
+
+  @@index([leadId, predictedAt(sort: Desc)])
+}
+
+model ProductRecommendation {
+  id          String   @id @default(uuid())
+  leadId      String
+  productName String
+  confidence  Float
+  reason      String?
+  generatedAt DateTime @default(now())
+
+  lead Lead @relation(fields: [leadId], references: [id])
+
+  @@index([leadId])
+  @@index([leadId, generatedAt(sort: Desc)])
+}
+
+model Recommendation {
+  id          String            @id @default(uuid())
+  leadId      String
+  action      RecommendedAction
+  priority    Priority
+  reason      String?
+  generatedAt DateTime          @default(now())
+
+  lead Lead @relation(fields: [leadId], references: [id])
+
+  @@index([leadId])
+  @@index([leadId, priority])
+  @@index([leadId, generatedAt(sort: Desc)])
+}
+
+model GeneratedContent {
+  id        String      @id @default(uuid())
+  leadId    String
+  type      ContentType
+  prompt    String?
+  content   String
+  model     String?
+  createdAt DateTime    @default(now())
+
+  lead Lead @relation(fields: [leadId], references: [id])
+
+  @@index([leadId])
+  @@index([leadId, type])
+  @@index([leadId, createdAt(sort: Desc)])
+}
+
+model SalesTask {
+  id          String     @id @default(uuid())
+  leadId      String
+  assignedTo  String
+  taskType    TaskType
+  status      TaskStatus @default(TODO)
+  dueDate     DateTime?
+  completedAt DateTime?
+  note        String?
+
+  lead Lead @relation(fields: [leadId], references: [id])
+  user User @relation(fields: [assignedTo], references: [id])
+
+  @@index([leadId])
+  @@index([assignedTo])
+  @@index([dueDate])
+  @@index([assignedTo, status])
+  @@index([status, dueDate])
+}

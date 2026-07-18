@@ -62,7 +62,4 @@ pnpm-debug.log*
 *.tsbuildinfo
 next-env.d.ts
 
-packages/database/src/generated/
-packages/database/.prisma-generate.lock/
-
 /.docs
