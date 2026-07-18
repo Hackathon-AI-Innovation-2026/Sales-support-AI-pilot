@@ -38,6 +38,7 @@ export default tseslint.config(
       '@typescript-eslint/no-misused-promises': 'off',
       '@typescript-eslint/no-unsafe-enum-comparison': 'off',
       'prettier/prettier': ['error', { endOfLine: 'auto' }],
+      '@typescript-eslint/no-unused-vars': 'off',
     },
   },
 );

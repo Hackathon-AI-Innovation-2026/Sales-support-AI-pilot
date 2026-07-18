@@ -16,11 +16,15 @@ import { GetLeadsQueryDto } from './dtos/get-leads-query.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { type User } from '@prisma/client';
+import { LeadScoringService } from './lead-scoring.service';
 
 @Controller('leads')
 @UseGuards(JwtAuthGuard)
 export class LeadsController {
-  constructor(private readonly leadsService: LeadsService) {}
+  constructor(
+    private readonly leadsService: LeadsService,
+    private readonly leadScoringService: LeadScoringService,
+  ) {}
 
   @Post()
   async create(
@@ -48,5 +52,20 @@ export class LeadsController {
   @Delete(':id')
   async remove(@Param('id') id: string) {
     return this.leadsService.softDelete(id);
+  }
+
+  @Post(':id/score')
+  async scoreLead(@Param('id') id: string) {
+    return this.leadScoringService.scoreLead(id);
+  }
+
+  @Get(':id/scores')
+  async getScoreHistory(@Param('id') id: string) {
+    return this.leadScoringService.getScoreHistory(id);
+  }
+
+  @Get(':id/score')
+  async getLatestScore(@Param('id') id: string) {
+    return this.leadScoringService.getLatestScore(id);
   }
 }

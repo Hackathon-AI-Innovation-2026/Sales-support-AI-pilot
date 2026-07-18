@@ -6,15 +6,16 @@
 
 ## Tổng quan
 
-| Thông tin | Chi tiết |
-|-----------|----------|
-| Thứ tự | Phase 2 (sau Phase 1) |
-| Độ phức tạp | 🟡 Trung bình |
-| Phụ thuộc | Phase 1 (DB ready) |
-| Unblock | Phase 5 (Frontend) |
-| Service | `apps/api` — NestJS |
+| Thông tin   | Chi tiết              |
+| ----------- | --------------------- |
+| Thứ tự      | Phase 2 (sau Phase 1) |
+| Độ phức tạp | 🟡 Trung bình         |
+| Phụ thuộc   | Phase 1 (DB ready)    |
+| Unblock     | Phase 5 (Frontend)    |
+| Service     | `apps/api` — NestJS   |
 
 **Trạng thái hiện tại:**
+
 - ✅ `AuthModule` — JWT login/refresh
 - ✅ `UsersModule` — CRUD user
 - ✅ `CustomersModule` — danh sách + chi tiết customer
@@ -25,6 +26,7 @@
 ## TASK-BE-01: Project Setup ✅ (đã hoàn thành)
 
 **Checklist:**
+
 - [x] `ConfigModule` — biến môi trường, validation
 - [x] `DatabaseModule` — Prisma Client injection
 - [x] `MailModule` — email infrastructure
@@ -43,10 +45,12 @@
 **Trạng thái:** Đã có một phần, cần bổ sung thêm endpoints.
 
 **Endpoints cần bổ sung:**
+
 - [x] `GET /customers/:id/interactions` — lịch sử tương tác có pagination
 - [x] `GET /customers/:id/leads` — danh sách leads của khách hàng
 
 **Checklist:**
+
 - [x] Response shape chuẩn (pagination metadata)
 - [x] Filter interactions theo `interactionType`
 - [x] Sort interactions theo `occurredAt DESC`
@@ -58,6 +62,7 @@
 **Mô tả:** Quản lý lead — đại diện cho cơ hội bán hàng.
 
 **Endpoints:**
+
 ```
 GET    /leads              — Danh sách leads (filter: status, assignedTo, score range)
 POST   /leads              — Tạo lead mới từ customer
@@ -67,13 +72,14 @@ DELETE /leads/:id          — Soft delete (cập nhật deletedAt)
 ```
 
 **Checklist:**
-- [ ] `leads.module.ts`, `leads.controller.ts`, `leads.service.ts`
-- [ ] DTO: `CreateLeadDto`, `UpdateLeadDto`, `LeadQueryDto`
-- [ ] Filter: `status`, `assignedTo`, `minScore`, `maxScore`
-- [ ] Sort: `score DESC`, `createdAt DESC`
-- [ ] Pagination
-- [ ] Populate relations: `customer`, `latestScore`, `latestRecommendation`, `tasks`
-- [ ] Guard: chỉ SALES được thấy leads assign cho họ, MANAGER thấy tất cả
+
+- [x] `leads.module.ts`, `leads.controller.ts`, `leads.service.ts`
+- [x] DTO: `CreateLeadDto`, `UpdateLeadDto`, `LeadQueryDto`
+- [x] Filter: `status`, `assignedTo`, `minScore`, `maxScore`
+- [x] Sort: `score DESC`, `createdAt DESC`
+- [x] Pagination
+- [x] Populate relations: `customer`, `latestScore`, `latestRecommendation`, `tasks`
+- [x] Guard: loại bỏ role-based access restriction theo yêu cầu
 
 ---
 
@@ -82,6 +88,7 @@ DELETE /leads/:id          — Soft delete (cập nhật deletedAt)
 **Mô tả:** NestJS đóng vai trò orchestrator — lấy data, gọi ML Service, lưu kết quả.
 
 **Endpoints:**
+
 ```
 POST /leads/:id/score    — Trigger scoring cho một lead
 GET  /leads/:id/scores   — Lịch sử điểm (tất cả predictions)
@@ -89,6 +96,7 @@ GET  /leads/:id/score    — Điểm mới nhất
 ```
 
 **Flow:**
+
 ```
 POST /leads/:id/score
   ↓
@@ -117,11 +125,12 @@ Return LeadScore
 ```
 
 **Checklist:**
-- [ ] `ml.module.ts`, `ml.service.ts` — HTTP client gọi ML Service
-- [ ] Feature engineering logic trong `ml.service.ts`
-- [ ] Config: `ML_SERVICE_URL` từ env
-- [ ] Error handling: ML Service timeout / unavailable → trả lỗi rõ ràng
-- [ ] Lưu `topFeatures` dạng JSON
+
+- [x] `lead-scoring.module.ts`, `lead-scoring.service.ts` — HTTP client gọi ML Service
+- [x] Feature engineering logic trong `lead-scoring.service.ts`
+- [x] Config: `ML_SERVICE_URL` từ env
+- [x] Error handling: ML Service timeout / unavailable → trả lỗi rõ ràng
+- [x] Lưu `topFeatures` dạng JSON
 
 ---
 
@@ -130,6 +139,7 @@ Return LeadScore
 **Mô tả:** Product Recommendation dùng Rule Engine + Next Best Action qua AI Service.
 
 **Endpoints:**
+
 ```
 POST /leads/:id/recommend-product    — Chạy Rule Engine → ProductRecommendation
 POST /leads/:id/next-best-action     — Gọi AI Service → Recommendation
@@ -137,6 +147,7 @@ GET  /leads/:id/recommendations      — Lấy toàn bộ (product + action)
 ```
 
 **Rule Engine — Product Recommendation:**
+
 ```
 if income > 30_000_000 AND !hasCreditCard:
   → SHB Visa Platinum (confidence: 0.9)
@@ -155,6 +166,7 @@ if age < 30 AND !hasCreditCard:
 ```
 
 **Next Best Action Flow:**
+
 ```
 POST /leads/:id/next-best-action
   ↓
@@ -168,10 +180,11 @@ Lưu Recommendation vào PostgreSQL
 ```
 
 **Checklist:**
-- [ ] `recommendation.module.ts`, `recommendation.service.ts`
-- [ ] Rule Engine: hàm `applyProductRules(customer, products, interactions)`
-- [ ] HTTP client gọi AI Service `POST /next-best-action`
-- [ ] Config: `AI_SERVICE_URL` từ env
+
+- [x] `recommendation.module.ts`, `recommendation.service.ts`
+- [x] Rule Engine: hàm `applyProductRules(customer, products, interactions)`
+- [x] HTTP client gọi AI Service `POST /next-best-action`
+- [x] Config: `AI_SERVICE_URL` từ env
 
 ---
 
@@ -180,6 +193,7 @@ Lưu Recommendation vào PostgreSQL
 **Mô tả:** NestJS là proxy/orchestrator — lấy context từ DB, gọi AI Service, lưu kết quả.
 
 **Endpoints:**
+
 ```
 POST /ai/generate-email   — Sinh email cá nhân hóa
 POST /ai/generate-pitch   — Sinh sales pitch
@@ -188,6 +202,7 @@ GET  /leads/:id/generated-content  — Lịch sử AI content
 ```
 
 **Generate Email Flow:**
+
 ```
 POST /ai/generate-email  { leadId }
   ↓
@@ -209,6 +224,7 @@ Return content
 ```
 
 **Chat Flow:**
+
 ```
 POST /ai/chat  { message, leadId?, conversationHistory }
   ↓
@@ -220,11 +236,12 @@ Stream response về Frontend
 ```
 
 **Checklist:**
-- [ ] `ai.module.ts`, `ai.service.ts`, `ai.controller.ts`
-- [ ] DTO: `GenerateEmailDto`, `GeneratePitchDto`, `ChatDto`
-- [ ] HTTP client với streaming support (SSE)
-- [ ] Lưu `GeneratedContent` sau mỗi generation
-- [ ] `GET /leads/:id/generated-content` với filter theo `type`
+
+- [x] `ai.module.ts`, `ai.service.ts`, `ai.controller.ts`
+- [x] DTO: `GenerateEmailDto`, `GeneratePitchDto`, `ChatDto`
+- [x] HTTP client với streaming support (SSE)
+- [x] Lưu `GeneratedContent` sau mỗi generation
+- [x] `GET /leads/:id/generated-content` với filter theo `type`
 
 ---
 
@@ -233,6 +250,7 @@ Stream response về Frontend
 **Mô tả:** Quản lý công việc hàng ngày của nhân viên bán hàng.
 
 **Endpoints:**
+
 ```
 GET    /tasks          — Danh sách tasks (filter: status, dueDate, taskType)
 POST   /tasks          — Tạo task mới
@@ -242,11 +260,12 @@ GET    /tasks/:id      — Chi tiết task
 ```
 
 **Checklist:**
-- [ ] `tasks.module.ts`, `tasks.controller.ts`, `tasks.service.ts`
-- [ ] DTO: `CreateTaskDto`, `UpdateTaskDto`, `TaskQueryDto`
-- [ ] Filter: `status` (TODO/IN_PROGRESS/DONE/FAILED), `dueDate`, `taskType`
-- [ ] Auto set `completedAt` khi status → DONE
-- [ ] Guard: Sales chỉ thấy tasks của mình (`assignedTo = currentUser.id`)
+
+- [x] `tasks.module.ts`, `tasks.controller.ts`, `tasks.service.ts`
+- [x] DTO: `CreateTaskDto`, `UpdateTaskDto`, `TaskQueryDto`
+- [x] Filter: `status` (TODO/IN_PROGRESS/DONE/FAILED), `dueDate`, `taskType`
+- [x] Auto set `completedAt` khi status → DONE
+- [x] Guard: Sales chỉ thấy tasks của mình (`assignedTo = currentUser.id`)
 
 ---
 
@@ -255,6 +274,7 @@ GET    /tasks/:id      — Chi tiết task
 **Mô tả:** Aggregate dữ liệu cho Manager Dashboard.
 
 **Endpoints:**
+
 ```
 GET /dashboard/summary          — Tổng quan (total leads, won this month, active tasks)
 GET /dashboard/funnel           — Số lead theo từng pipeline stage
@@ -264,6 +284,7 @@ GET /dashboard/revenue-forecast — Forecast dựa trên leads đang NEGOTIATION
 ```
 
 **Business Logic:**
+
 ```
 funnel:
   { status: 'NEW', count: X }
@@ -281,10 +302,11 @@ revenue-forecast:
 ```
 
 **Checklist:**
-- [ ] `dashboard.module.ts`, `dashboard.controller.ts`, `dashboard.service.ts`
-- [ ] Guard: chỉ MANAGER và ADMIN được truy cập
-- [ ] Caching (optional): TTL 5 phút cho các aggregate queries
-- [ ] Response format phù hợp để render chart trực tiếp
+
+- [x] `dashboard.module.ts`, `dashboard.controller.ts`, `dashboard.service.ts`
+- [x] Guard: chỉ MANAGER và ADMIN được truy cập
+- [x] Caching (optional): TTL 5 phút cho các aggregate queries
+- [x] Response format phù hợp để render chart trực tiếp
 
 ---
 

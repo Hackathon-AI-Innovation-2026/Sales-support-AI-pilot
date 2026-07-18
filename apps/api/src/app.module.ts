@@ -9,7 +9,6 @@ import { AuthModule } from './modules/auth/auth.module';
 import { UsersModule } from './modules/users/users.module';
 import { CustomersModule } from './modules/customers/customers.module';
 import { LeadsModule } from './modules/leads/leads.module';
-import { LeadScoringModule } from './modules/lead-scoring/lead-scoring.module';
 import { RecommendationModule } from './modules/recommendation/recommendation.module';
 import { AiModule } from './modules/ai/ai.module';
 import { TasksModule } from './modules/tasks/tasks.module';
@@ -30,7 +29,6 @@ import { DashboardModule } from './modules/dashboard/dashboard.module';
     UsersModule,
     CustomersModule,
     LeadsModule,
-    LeadScoringModule,
     RecommendationModule,
     AiModule,
     TasksModule,
