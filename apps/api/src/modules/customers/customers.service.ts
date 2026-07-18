@@ -2,6 +2,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../infrastructure/database/prisma.service';
 import { CreateCustomerDto } from './dtos/create-customer.dto';
 import { UpdateCustomerDto } from './dtos/update-customer.dto';
+import { GetCustomerInteractionsQueryDto } from './dtos/get-customer-interactions-query.dto';
 import { Prisma } from '@prisma/client';
 
 @Injectable()
@@ -152,5 +153,82 @@ export class CustomersService {
       where: { id },
       data: { deletedAt: new Date() },
     });
+  }
+
+  async findInteractions(
+    customerId: string,
+    query: GetCustomerInteractionsQueryDto,
+  ) {
+    const page = query.page ?? 1;
+    const limit = query.limit ?? 20;
+    const skip = (page - 1) * limit;
+
+    const customer = await this.prisma.customer.findFirst({
+      where: { id: customerId, deletedAt: null },
+    });
+
+    if (!customer) {
+      throw new NotFoundException(`Customer with ID ${customerId} not found`);
+    }
+
+    const where: Prisma.CustomerInteractionWhereInput = {
+      customerId,
+    };
+
+    if (query.interactionType) {
+      where.interactionType = query.interactionType;
+    }
+
+    const [data, total] = await this.prisma.$transaction([
+      this.prisma.customerInteraction.findMany({
+        where,
+        skip,
+        take: limit,
+        orderBy: { occurredAt: 'desc' },
+      }),
+      this.prisma.customerInteraction.count({ where }),
+    ]);
+
+    return {
+      data,
+      meta: {
+        page,
+        limit,
+        total,
+      },
+    };
+  }
+
+  async findLeads(customerId: string) {
+    const customer = await this.prisma.customer.findFirst({
+      where: { id: customerId, deletedAt: null },
+    });
+
+    if (!customer) {
+      throw new NotFoundException(`Customer with ID ${customerId} not found`);
+    }
+
+    const data = await this.prisma.lead.findMany({
+      where: { customerId },
+      orderBy: { createdAt: 'desc' },
+      include: {
+        scores: {
+          orderBy: { predictedAt: 'desc' },
+          take: 1,
+        },
+        assignedUser: {
+          select: {
+            id: true,
+            email: true,
+            fullName: true,
+            role: true,
+          },
+        },
+      },
+    });
+
+    return {
+      data,
+    };
   }
 }

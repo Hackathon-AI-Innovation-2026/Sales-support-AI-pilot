@@ -13,6 +13,7 @@ import { CustomersService } from './customers.service';
 import { CreateCustomerDto } from './dtos/create-customer.dto';
 import { UpdateCustomerDto } from './dtos/update-customer.dto';
 import { GetCustomersQueryDto } from './dtos/get-customers-query.dto';
+import { GetCustomerInteractionsQueryDto } from './dtos/get-customer-interactions-query.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
@@ -51,5 +52,18 @@ export class CustomersController {
   @UseGuards(RolesGuard)
   async remove(@Param('id') id: string) {
     return this.customersService.softDelete(id);
+  }
+
+  @Get(':id/interactions')
+  async findInteractions(
+    @Param('id') id: string,
+    @Query() query: GetCustomerInteractionsQueryDto,
+  ) {
+    return this.customersService.findInteractions(id, query);
+  }
+
+  @Get(':id/leads')
+  async findLeads(@Param('id') id: string) {
+    return this.customersService.findLeads(id);
   }
 }
