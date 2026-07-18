@@ -10,6 +10,7 @@ import { UsersModule } from './modules/users/users.module';
 import { CustomersModule } from './modules/customers/customers.module';
 import { LeadsModule } from './modules/leads/leads.module';
 import { LeadScoringModule } from './modules/lead-scoring/lead-scoring.module';
+import { RecommendationModule } from './modules/recommendation/recommendation.module';
 
 @Module({
   imports: [
@@ -27,6 +28,7 @@ import { LeadScoringModule } from './modules/lead-scoring/lead-scoring.module';
     CustomersModule,
     LeadsModule,
     LeadScoringModule,
+    RecommendationModule,
   ],
   controllers: [],
   providers: [],

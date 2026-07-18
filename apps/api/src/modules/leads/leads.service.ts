@@ -117,7 +117,6 @@ export class LeadsService {
         },
         recommendations: {
           orderBy: { generatedAt: 'desc' },
-          take: 1,
         },
         actions: {
           orderBy: { generatedAt: 'desc' },
