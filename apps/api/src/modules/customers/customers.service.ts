@@ -56,6 +56,14 @@ export class CustomersService {
         skip,
         take: limit,
         orderBy: { createdAt: 'desc' },
+        include: {
+          _count: {
+            select: {
+              products: true,
+              leads: true,
+            },
+          },
+        },
       }),
       this.prisma.customer.count({ where }),
     ]);

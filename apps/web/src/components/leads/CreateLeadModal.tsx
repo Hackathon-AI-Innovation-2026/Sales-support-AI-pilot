@@ -30,6 +30,7 @@ type CreateLeadFormValues = z.infer<typeof createLeadSchema>
 interface CreateLeadModalProps {
   open: boolean
   onOpenChange: (open: boolean) => void
+  initialCustomerId?: string
 }
 
 const products = [
@@ -42,7 +43,7 @@ const products = [
   "Insurance",
 ]
 
-export function CreateLeadModal({ open, onOpenChange }: CreateLeadModalProps) {
+export function CreateLeadModal({ open, onOpenChange, initialCustomerId }: CreateLeadModalProps) {
   const queryClient = useQueryClient()
   const [isSubmitting, setIsSubmitting] = React.useState(false)
 
@@ -61,7 +62,7 @@ export function CreateLeadModal({ open, onOpenChange }: CreateLeadModalProps) {
   } = useForm<CreateLeadFormValues>({
     resolver: zodResolver(createLeadSchema),
     defaultValues: {
-      customerId: "",
+      customerId: initialCustomerId || "",
       interestedProduct: "",
       status: "NEW",
     },
@@ -71,8 +72,14 @@ export function CreateLeadModal({ open, onOpenChange }: CreateLeadModalProps) {
   React.useEffect(() => {
     if (!open) {
       reset()
+    } else {
+      reset({
+        customerId: initialCustomerId || "",
+        interestedProduct: "",
+        status: "NEW"
+      })
     }
-  }, [open, reset])
+  }, [open, initialCustomerId, reset])
 
   const onSubmit = async (values: CreateLeadFormValues) => {
     try {
@@ -112,7 +119,7 @@ export function CreateLeadModal({ open, onOpenChange }: CreateLeadModalProps) {
                 <Select
                   value={field.value}
                   onValueChange={field.onChange}
-                  disabled={isCustomersLoading}
+                  disabled={isCustomersLoading || !!initialCustomerId}
                 >
                   <SelectTrigger className="bg-muted/20 border-border text-xs focus:ring-1 focus:ring-primary rounded-lg">
                     <SelectValue placeholder={isCustomersLoading ? "Đang tải danh sách..." : "Chọn khách hàng"} />
