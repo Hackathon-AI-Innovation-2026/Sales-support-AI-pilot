@@ -117,6 +117,7 @@ describe('RecommendationController (e2e)', () => {
       if (res.body.action !== 'WAIT') {
         const genContent = await prisma.generatedContent.findFirst({
           where: { leadId },
+          orderBy: { createdAt: 'desc' },
         });
         expect(genContent).not.toBeNull();
         expect(genContent?.content).toBe(res.body.suggestedContent);
