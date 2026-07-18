@@ -66,4 +66,5 @@ next-env.d.ts
 
 # Python
 __pycache__/
+venv/
 .venv/
