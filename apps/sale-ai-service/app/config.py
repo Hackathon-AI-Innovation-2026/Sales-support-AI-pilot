@@ -11,6 +11,12 @@ class Settings(BaseSettings):
     GEMINI_API_KEY: str | None = None
     OPENAI_API_KEY: str | None = None
     LLM_PROVIDER: str = "gemini"  # "gemini" or "openai"
+    GEMINI_MODEL: str = "gemini-1.5-flash"
+    OPENAI_MODEL: str = "gpt-4o-mini"
+    EMBEDDING_MODEL: str = "models/text-embedding-004"
+    EMBEDDING_DIMENSION: int = 3072
+    DEFAULT_TOP_K: int = 5
+    MAX_CONTEXT_CHARACTERS: int = 8000
     
     # Vector DB Settings
     QDRANT_URL: str = "http://localhost:6333"
