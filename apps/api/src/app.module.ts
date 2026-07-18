@@ -5,6 +5,8 @@ import { validateEnv } from './config';
 import { DatabaseModule } from './infrastructure/database';
 import { MailModule } from './infrastructure/mail';
 import { StorageModule } from './infrastructure/storage/storage.module';
+import { AuthModule } from './modules/auth/auth.module';
+import { UsersModule } from './modules/users/users.module';
 
 @Module({
   imports: [
@@ -17,6 +19,8 @@ import { StorageModule } from './infrastructure/storage/storage.module';
     DatabaseModule,
     MailModule,
     StorageModule,
+    AuthModule,
+    UsersModule,
   ],
   controllers: [],
   providers: [],

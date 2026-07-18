@@ -73,12 +73,13 @@ enum TaskStatus {
 }
 
 model User {
-  id           String   @id @default(uuid())
-  email        String   @unique
-  passwordHash String
-  fullName     String
-  role         UserRole @default(SALES)
-  createdAt    DateTime @default(now())
+  id               String   @id @default(uuid())
+  email            String   @unique
+  passwordHash     String
+  fullName         String
+  role             UserRole @default(SALES)
+  refreshTokenHash String?
+  createdAt        DateTime @default(now())
 
   leads Lead[]
   tasks SalesTask[]
