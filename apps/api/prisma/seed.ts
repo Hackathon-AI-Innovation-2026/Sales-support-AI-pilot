@@ -678,6 +678,10 @@ async function main() {
         predictedAt: daysAgo(randomInt(0, 7)),
       },
     });
+    await prisma.lead.update({
+      where: { id: lead.id },
+      data: { latestScore: score },
+    });
   }
 
   console.log(`  ✓ LeadScores: ${leads.length}`);

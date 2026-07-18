@@ -8,6 +8,8 @@ import { StorageModule } from './infrastructure/storage/storage.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { UsersModule } from './modules/users/users.module';
 import { CustomersModule } from './modules/customers/customers.module';
+import { LeadsModule } from './modules/leads/leads.module';
+import { LeadScoringModule } from './modules/lead-scoring/lead-scoring.module';
 
 @Module({
   imports: [
@@ -23,6 +25,8 @@ import { CustomersModule } from './modules/customers/customers.module';
     AuthModule,
     UsersModule,
     CustomersModule,
+    LeadsModule,
+    LeadScoringModule,
   ],
   controllers: [],
   providers: [],

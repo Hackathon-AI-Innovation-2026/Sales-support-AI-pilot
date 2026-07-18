@@ -144,6 +144,8 @@ model Lead {
   assignedTo        String?
   interestedProduct String?
   status            LeadStatus @default(NEW)
+  latestScore       Float?
+  deletedAt         DateTime?
   createdAt         DateTime   @default(now())
   updatedAt         DateTime   @updatedAt
 
@@ -160,6 +162,7 @@ model Lead {
   @@index([status])
   @@index([status, createdAt(sort: Desc)])
   @@index([assignedTo, status])
+  @@index([latestScore])
 }
 
 model LeadScore {
