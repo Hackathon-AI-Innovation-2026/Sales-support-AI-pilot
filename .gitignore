@@ -63,3 +63,7 @@ pnpm-debug.log*
 next-env.d.ts
 
 /.docs
+
+# Python
+venv/
+__pycache__/
