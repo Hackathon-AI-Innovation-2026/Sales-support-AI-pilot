@@ -227,7 +227,6 @@ Lưu kết quả dự đoán từ ML.
 | score                  | 0-100             |
 | conversion_probability | 0-1               |
 | top_features           | JSONB             |
-| model_version          | Version Model     |
 | predicted_at           | Thời gian dự đoán |
 
 Ví dụ
