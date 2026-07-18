@@ -49,19 +49,24 @@ export class AiService {
     const customer = lead.customer;
     let latestRec = lead.recommendations[0];
 
-    // If no product recommendation is found, auto-trigger the recommendation engine
-    if (!latestRec) {
+    // If no product recommendation is found and no productName is specified, auto-trigger the recommendation engine
+    if (!latestRec && !dto.productName) {
       const recs = await this.recommendationService.recommendProduct(leadId);
       if (recs && recs.length > 0) {
         latestRec = recs[0];
       }
     }
 
-    if (!latestRec) {
+    if (!latestRec && !dto.productName) {
       throw new BadRequestException(
         'No product recommendation found or could be generated for this lead. Please complete customer profile first.',
       );
     }
+
+    const productName = dto.productName || latestRec.productName;
+    const productReason = dto.productName
+      ? `Sản phẩm do Sales lựa chọn trực tiếp: ${dto.productName}`
+      : (latestRec?.reason ?? '');
 
     const latestScore = lead.scores[0];
     const score = latestScore?.score ?? 50;
@@ -76,7 +81,7 @@ export class AiService {
       // Mock email generation
       emailResult = {
         subject: `[SHB] Giải pháp tài chính tối ưu cho anh/chị ${customer.fullName}`,
-        body: `Thân gửi anh/chị ${customer.fullName},\n\nNhận thấy anh/chị đang quan tâm đến sản phẩm ${latestRec.productName} tại SHB và có lịch sử hoạt động rất tốt, chúng tôi xin gửi tặng anh/chị chương trình ưu đãi đặc biệt...\n\nTrân trọng,\nSHB Sales Copilot`,
+        body: `Thân gửi anh/chị ${customer.fullName},\n\nNhận thấy anh/chị đang quan tâm đến sản phẩm ${productName} tại SHB và có lịch sử hoạt động rất tốt, chúng tôi xin gửi tặng anh/chị chương trình ưu đãi đặc biệt...\n\nTrân trọng,\nSHB Sales Copilot`,
       };
     } else {
       try {
@@ -87,8 +92,8 @@ export class AiService {
           city: customer.city ?? '',
           leadScore: score,
           conversionProbability: probability,
-          recommendedProduct: latestRec.productName,
-          productReason: latestRec.reason ?? '',
+          recommendedProduct: productName,
+          productReason: productReason,
           topFeatures: topFeatures,
         };
 
@@ -122,7 +127,7 @@ export class AiService {
       data: {
         leadId,
         type: ContentType.EMAIL,
-        prompt: `Generate email for customer ${customer.fullName} recommending ${latestRec.productName}. Score: ${score}`,
+        prompt: `Generate email for customer ${customer.fullName} recommending ${productName}. Score: ${score}`,
         content: JSON.stringify(emailResult),
         model:
           aiServiceUrl && aiServiceUrl !== 'mock'
@@ -157,19 +162,24 @@ export class AiService {
     const customer = lead.customer;
     let latestRec = lead.recommendations[0];
 
-    // If no product recommendation is found, auto-trigger recommendation engine
-    if (!latestRec) {
+    // If no product recommendation is found and no productName is specified, auto-trigger recommendation engine
+    if (!latestRec && !dto.productName) {
       const recs = await this.recommendationService.recommendProduct(leadId);
       if (recs && recs.length > 0) {
         latestRec = recs[0];
       }
     }
 
-    if (!latestRec) {
+    if (!latestRec && !dto.productName) {
       throw new BadRequestException(
         'No product recommendation found or could be generated for this lead. Please complete customer profile first.',
       );
     }
+
+    const productName = dto.productName || latestRec.productName;
+    const productReason = dto.productName
+      ? `Sản phẩm do Sales lựa chọn trực tiếp: ${dto.productName}`
+      : (latestRec?.reason ?? '');
 
     const latestScore = lead.scores[0];
     const score = latestScore?.score ?? 50;
@@ -180,15 +190,15 @@ export class AiService {
 
     if (!aiServiceUrl || aiServiceUrl === 'mock') {
       // Mock pitch generation
-      pitchContent = `Chào anh/chị ${customer.fullName}, em gọi điện hỗ trợ từ ngân hàng SHB. Em thấy mình đang tìm hiểu về sản phẩm ${latestRec.productName}. Đây là dòng sản phẩm cực kỳ phù hợp với hồ sơ của mình với nhiều ưu đãi lãi suất và đặc quyền đi kèm. Em xin phép chia sẻ thêm thông tin chi tiết ạ.`;
+      pitchContent = `Chào anh/chị ${customer.fullName}, em gọi điện hỗ trợ từ ngân hàng SHB. Em thấy mình đang tìm hiểu về sản phẩm ${productName}. Đây là dòng sản phẩm cực kỳ phù hợp với hồ sơ của mình với nhiều ưu đãi lãi suất và đặc quyền đi kèm. Em xin phép chia sẻ thêm thông tin chi tiết ạ.`;
     } else {
       try {
         const payload = {
           customerName: customer.fullName,
           leadScore: score,
-          recommendedProduct: latestRec.productName,
-          confidence: latestRec.confidence,
-          productReason: latestRec.reason ?? '',
+          recommendedProduct: productName,
+          confidence: latestRec ? latestRec.confidence : 0.8,
+          productReason: productReason,
         };
 
         const response = await fetch(`${aiServiceUrl}/generate-pitch`, {
@@ -218,7 +228,7 @@ export class AiService {
       data: {
         leadId,
         type: ContentType.PITCH,
-        prompt: `Generate sales pitch for customer ${customer.fullName} recommending ${latestRec.productName}. Score: ${score}`,
+        prompt: `Generate sales pitch for customer ${customer.fullName} recommending ${productName}. Score: ${score}`,
         content: pitchContent,
         model:
           aiServiceUrl && aiServiceUrl !== 'mock'

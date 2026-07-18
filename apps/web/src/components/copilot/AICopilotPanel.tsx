@@ -5,6 +5,10 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Sparkles, Mail, MessageSquare, Mic } from "lucide-react"
 
+import EmailGenerator from "./EmailGenerator"
+import PitchGenerator from "./PitchGenerator"
+import ChatInterface from "./ChatInterface"
+
 interface AICopilotPanelProps {
   leadId: string
   activeTab: string
@@ -50,53 +54,19 @@ export default function AICopilotPanel({
             </TabsTrigger>
           </TabsList>
 
-          {/* Email Tab Placeholder (rich logic in TASK-FE-06) */}
-          <TabsContent value="email" className="flex-1 flex flex-col items-center justify-center text-center p-8 space-y-3 bg-muted/10 border border-dashed border-border rounded-xl mt-0">
-            <div className="p-3 rounded-full bg-primary/10 text-primary">
-              <Mail className="w-6 h-6 animate-bounce" />
-            </div>
-            <div className="space-y-1">
-              <h3 className="text-xs font-bold text-foreground">Trình tạo Email AI</h3>
-              <p className="text-[10px] text-muted-foreground max-w-[220px] leading-normal font-medium">
-                Sẵn sàng soạn thảo thư chào hàng sản phẩm{" "}
-                <span className="text-primary font-bold">{interestedProduct || "Thẻ Visa Platinum"}</span> cho khách hàng.
-              </p>
-            </div>
-            <span className="text-[9px] bg-amber-500/10 text-amber-500 font-bold px-2 py-0.5 rounded-full uppercase tracking-wider">
-              Chờ thiết lập trong TASK-FE-06
-            </span>
+          {/* Email Tab */}
+          <TabsContent value="email" className="flex-1 flex flex-col mt-0">
+            <EmailGenerator leadId={leadId} defaultProduct={interestedProduct} />
           </TabsContent>
 
-          {/* Pitch Tab Placeholder */}
-          <TabsContent value="pitch" className="flex-1 flex flex-col items-center justify-center text-center p-8 space-y-3 bg-muted/10 border border-dashed border-border rounded-xl mt-0">
-            <div className="p-3 rounded-full bg-warning/15 text-warning">
-              <Mic className="w-6 h-6 animate-pulse" />
-            </div>
-            <div className="space-y-1">
-              <h3 className="text-xs font-bold text-foreground">Kịch bản Bán hàng (Sales Pitch)</h3>
-              <p className="text-[10px] text-muted-foreground max-w-[220px] leading-normal font-medium">
-                Sẵn sàng tạo kịch bản gọi điện tư vấn thuyết phục dành riêng cho lead này.
-              </p>
-            </div>
-            <span className="text-[9px] bg-amber-500/10 text-amber-500 font-bold px-2 py-0.5 rounded-full uppercase tracking-wider">
-              Chờ thiết lập trong TASK-FE-06
-            </span>
+          {/* Pitch Tab */}
+          <TabsContent value="pitch" className="flex-1 flex flex-col mt-0">
+            <PitchGenerator leadId={leadId} defaultProduct={interestedProduct} />
           </TabsContent>
 
-          {/* Chat Tab Placeholder */}
-          <TabsContent value="chat" className="flex-1 flex flex-col items-center justify-center text-center p-8 space-y-3 bg-muted/10 border border-dashed border-border rounded-xl mt-0">
-            <div className="p-3 rounded-full bg-success/10 text-success">
-              <MessageSquare className="w-6 h-6" />
-            </div>
-            <div className="space-y-1">
-              <h3 className="text-xs font-bold text-foreground">Hỏi đáp AI Copilot</h3>
-              <p className="text-[10px] text-muted-foreground max-w-[220px] leading-normal font-medium">
-                Trò chuyện trực tiếp để đặt câu hỏi về danh mục sản phẩm và chính sách vay SHB.
-              </p>
-            </div>
-            <span className="text-[9px] bg-amber-500/10 text-amber-500 font-bold px-2 py-0.5 rounded-full uppercase tracking-wider">
-              Chờ thiết lập trong TASK-FE-06
-            </span>
+          {/* Chat Tab */}
+          <TabsContent value="chat" className="flex-1 flex flex-col mt-0">
+            <ChatInterface leadId={leadId} />
           </TabsContent>
         </Tabs>
       </CardContent>

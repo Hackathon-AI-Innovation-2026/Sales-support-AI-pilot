@@ -5,11 +5,19 @@ import { Type } from 'class-transformer';
 export class GenerateEmailDto {
   @IsUUID()
   leadId: string;
+
+  @IsString()
+  @IsOptional()
+  productName?: string;
 }
 
 export class GeneratePitchDto {
   @IsUUID()
   leadId: string;
+
+  @IsString()
+  @IsOptional()
+  productName?: string;
 }
 
 export class ChatMessageDto {
