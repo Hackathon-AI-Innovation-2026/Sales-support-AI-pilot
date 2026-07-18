@@ -24,6 +24,18 @@ export class AiService {
     private readonly recommendationService: RecommendationService,
   ) {}
 
+  /**
+   * Normalize topFeatures from Prisma JSON (may be string[] or {feature,importance}[])
+   * into a plain string[] that sale-ai-service expects.
+   */
+  private normalizeTopFeatures(raw: any): string[] {
+    if (!raw) return [];
+    const arr = Array.isArray(raw) ? raw : [];
+    return arr.map((f: any) =>
+      typeof f === 'string' ? f : (f?.feature ?? String(f)),
+    );
+  }
+
   async generateEmail(dto: GenerateEmailDto) {
     const { leadId } = dto;
 
@@ -71,7 +83,7 @@ export class AiService {
     const latestScore = lead.scores[0];
     const score = latestScore?.score ?? 50;
     const probability = latestScore?.conversionProbability ?? 0.5;
-    const topFeatures = latestScore?.topFeatures ?? [];
+    const topFeatures = this.normalizeTopFeatures(latestScore?.topFeatures);
 
     const aiServiceUrl = this.configService.get<string>('AI_SERVICE_URL');
 

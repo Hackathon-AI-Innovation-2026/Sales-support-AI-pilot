@@ -57,14 +57,20 @@ Trả lời bằng tiếng Việt. Nếu không chắc, nói rõ."""
 NBA_TEMPLATE = """Phân tích lead và đề xuất hành động tiếp theo.
 
 LEAD SCORE: {lead_score}/100 (Probability: {probability:.0%})
-TƯƠNG TÁC GẦN ĐÂY: {recent_interactions}
 SẢN PHẨM QUAN TÂM: {interested_product}
 
-QUY TRÌNH BÁN HÀNG:
+TƯƠNG TÁC GẦN ĐÂY:
+{recent_interactions}
+
+QUY TRÌNH BÁN HÀNG SHB / HƯỚNG DẪN:
 {retrieved_context}
 
-Hành động đã được xác định: {action} ({priority})
-Hãy giải thích lý do và đề xuất nội dung cụ thể cho hành động này.
+Hành động dự kiến từ hệ thống: {action} ({priority})
+
+YÊU CẦU:
+1. Đọc kỹ phần TƯƠNG TÁC GẦN ĐÂY. Nếu có ghi chú cuộc trò chuyện từ Sales, hãy ưu tiên bám sát nội dung ghi chú đó để đưa ra đề xuất hành động tiếp theo thực tế nhất.
+2. Giải thích rõ tại sao hành động này là tối ưu.
+3. Soạn thảo nội dung gợi ý (email mẫu, kịch bản gọi điện hoặc dàn bài cuộc hẹn) chi tiết và phù hợp nhất với trạng thái hiện tại.
 
 Trả về JSON:
 {{

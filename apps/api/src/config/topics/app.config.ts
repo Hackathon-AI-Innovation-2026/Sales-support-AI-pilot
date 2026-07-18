@@ -18,5 +18,7 @@ export function validateAppConfig(config: RawEnv) {
       'CORS_ORIGIN',
     ),
     FRONTEND_URL: config.FRONTEND_URL ?? APP_CONFIG_KEY.FRONTEND_URL,
+    ML_SERVICE_URL: config.ML_SERVICE_URL ?? 'http://lead-ml-service:8001',
+    AI_SERVICE_URL: config.AI_SERVICE_URL ?? 'http://sale-ai-service:8002',
   };
 }

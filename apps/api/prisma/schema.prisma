@@ -28,6 +28,8 @@ enum InteractionType {
   WEBSITE_VISIT
   APP_LOGIN
   LOAN_INQUIRY
+  EMAIL
+  MEETING
 }
 
 enum LeadStatus {

@@ -17,7 +17,9 @@ import { GetCustomerInteractionsQueryDto } from './dtos/get-customer-interaction
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
-import { UserRole } from '@prisma/client';
+import { UserRole, type User } from '@prisma/client';
+import { LogInteractionDto } from './dtos/log-interaction.dto';
+import { CurrentUser } from '../../common/decorators/current-user.decorator';
 
 @Controller('customers')
 @UseGuards(JwtAuthGuard)
@@ -60,6 +62,15 @@ export class CustomersController {
     @Query() query: GetCustomerInteractionsQueryDto,
   ) {
     return this.customersService.findInteractions(id, query);
+  }
+
+  @Post(':id/interactions/log')
+  async logInteraction(
+    @Param('id') id: string,
+    @Body() dto: LogInteractionDto,
+    @CurrentUser() user: User,
+  ) {
+    return this.customersService.logInteraction(id, dto, user.id);
   }
 
   @Get(':id/leads')

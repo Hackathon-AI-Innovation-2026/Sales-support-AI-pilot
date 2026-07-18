@@ -137,7 +137,7 @@ export class RecommendationService {
     return matched;
   }
 
-  async getNextBestAction(leadId: string) {
+  async getNextBestAction(leadId: string, recentNoteContext?: string) {
     const lead = await this.prisma.lead.findFirst({
       where: { id: leadId, deletedAt: null },
       include: {
@@ -224,12 +224,15 @@ export class RecommendationService {
       }
 
       result = { action, priority, reason, suggestedContent };
+      if (recentNoteContext) {
+        result.reason += ` (Ghi chú: ${recentNoteContext})`;
+      }
     } else {
       try {
         const payload = {
-          lead_score: score,
-          probability: probability,
-          interested_product: lead.interestedProduct,
+          leadScore: score,
+          conversionProbability: probability,
+          interestedProduct: lead.interestedProduct ?? 'Chưa xác định',
           interactions: {
             email_open_count: emailOpenCount,
             email_click_count: emailClickCount,
@@ -238,13 +241,14 @@ export class RecommendationService {
             branch_visit_count: branchVisitCount,
             call_count: callCount,
           },
+          recentInteractionsText: recentNoteContext ?? null,
         };
 
         const response = await fetch(`${aiServiceUrl}/next-best-action`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload),
-          signal: AbortSignal.timeout(5000),
+          signal: AbortSignal.timeout(30000),
         });
 
         if (!response.ok) {
@@ -279,7 +283,13 @@ export class RecommendationService {
           suggestedContent: data.suggestedContent,
         };
       } catch (error) {
-        throw new BadGatewayException('AI Service is currently unavailable');
+        console.error(
+          '[RecommendationService] AI Service call failed:',
+          error?.message ?? error,
+        );
+        throw new BadGatewayException(
+          `AI Service is currently unavailable: ${error?.message ?? 'Unknown error'}`,
+        );
       }
     }
 

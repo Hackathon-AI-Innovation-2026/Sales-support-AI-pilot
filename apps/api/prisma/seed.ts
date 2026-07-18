@@ -168,7 +168,11 @@ async function main() {
   console.log('  → Creating users...');
   const manager = await prisma.user.upsert({
     where: { email: 'manager@shb.com.vn' },
-    update: {},
+    update: {
+      passwordHash: hashPassword('Manager@123'),
+      fullName: 'Nguyễn Văn Quản Lý',
+      role: 'MANAGER',
+    },
     create: {
       email: 'manager@shb.com.vn',
       passwordHash: hashPassword('Manager@123'),
@@ -180,7 +184,11 @@ async function main() {
   const salesUsers = await Promise.all([
     prisma.user.upsert({
       where: { email: 'sales1@shb.com.vn' },
-      update: {},
+      update: {
+        passwordHash: hashPassword('Sales@123'),
+        fullName: 'Trần Thị Bích Vân',
+        role: 'SALES',
+      },
       create: {
         email: 'sales1@shb.com.vn',
         passwordHash: hashPassword('Sales@123'),
@@ -190,7 +198,11 @@ async function main() {
     }),
     prisma.user.upsert({
       where: { email: 'sales2@shb.com.vn' },
-      update: {},
+      update: {
+        passwordHash: hashPassword('Sales@123'),
+        fullName: 'Lê Minh Hoàng',
+        role: 'SALES',
+      },
       create: {
         email: 'sales2@shb.com.vn',
         passwordHash: hashPassword('Sales@123'),
@@ -200,7 +212,11 @@ async function main() {
     }),
     prisma.user.upsert({
       where: { email: 'sales3@shb.com.vn' },
-      update: {},
+      update: {
+        passwordHash: hashPassword('Sales@123'),
+        fullName: 'Phạm Thị Thu Hà',
+        role: 'SALES',
+      },
       create: {
         email: 'sales3@shb.com.vn',
         passwordHash: hashPassword('Sales@123'),
@@ -755,7 +771,7 @@ async function main() {
         type: 'EMAIL',
         prompt: `Viết email chào hàng ${pickRandom(PRODUCTS_INTEREST)} cho khách hàng thu nhập ${randomInt(15, 80)} triệu/tháng`,
         content: sample.body,
-        model: pickRandom(['gemini-1.5-pro', 'gemini-2.0-flash']),
+        model: 'gemini-3.5-flash',
         createdAt: daysAgo(randomInt(0, 14)),
       },
     });

@@ -64,13 +64,13 @@ async def next_best_action(
             probability=request.conversionProbability,
             recent_interactions=recent_text,
             interested_product=request.interestedProduct,
-            retrieved_context=docs,
+            documents=docs,
             action=action,
             priority=priority
         )
         
         # 5. Call LLM (using JSON mode) to get explanation and suggested content
-        llm_response = llm.generate(prompt, max_tokens=1000, is_json=True)
+        llm_response = llm.generate(prompt, max_tokens=8192, is_json=True)
         
         # 6. Parse result
         data = json.loads(llm_response)

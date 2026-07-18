@@ -13,8 +13,9 @@ import { InteractionTimeline } from "@/components/leads/InteractionTimeline"
 import { SalesTaskList } from "@/components/leads/SalesTaskList"
 import AICopilotPanel from "@/components/copilot/AICopilotPanel"
 import { CardSkeleton, TableSkeleton } from "@/components/common/Skeleton"
-import { ArrowLeft, UserCheck } from "lucide-react"
+import { ArrowLeft, UserCheck, MessageSquare } from "lucide-react"
 import Link from "next/link"
+import { LogInteractionModal } from "@/components/leads/LogInteractionModal"
 
 export default function LeadDetailPage() {
   const params = useParams()
@@ -22,6 +23,7 @@ export default function LeadDetailPage() {
 
   // State to manage the active tab in the AI Copilot Panel
   const [activeTab, setActiveTab] = React.useState("email")
+  const [isLogModalOpen, setIsLogModalOpen] = React.useState(false)
 
   // Query 1: Fetch lead details (includes latest score, recommendations, actions, and tasks)
   const { data: lead, isLoading: isLeadLoading } = useQuery({
@@ -119,6 +121,14 @@ export default function LeadDetailPage() {
             </p>
           </div>
         </div>
+
+        <Button
+          onClick={() => setIsLogModalOpen(true)}
+          className="bg-primary hover:bg-primary/90 text-white text-xs font-semibold cursor-pointer h-9 px-4 rounded-lg border-0 flex items-center gap-1.5"
+        >
+          <MessageSquare className="w-4 h-4" />
+          Ghi nhận tương tác
+        </Button>
       </div>
 
       {/* Grid Layout (3 columns on desktop, single stack on mobile) */}
@@ -130,11 +140,12 @@ export default function LeadDetailPage() {
           <LeadScoreCard leadId={lead.id} latestScore={latestScore} />
           
           <RecommendedProductCard
+            leadId={lead.id}
             recommendation={latestRecommendation}
             onGenerateEmailClick={() => setActiveTab("email")}
           />
           
-          <NextBestActionCard action={latestAction} />
+          <NextBestActionCard leadId={lead.id} action={latestAction} />
         </div>
 
         {/* Middle Column: Grouped Interaction Timeline */}
@@ -154,6 +165,13 @@ export default function LeadDetailPage() {
           <SalesTaskList leadId={lead.id} tasks={tasks} />
         </div>
       </div>
+
+      <LogInteractionModal
+        open={isLogModalOpen}
+        onOpenChange={setIsLogModalOpen}
+        customerId={lead.customerId}
+        leadId={lead.id}
+      />
     </div>
   )
 }

@@ -61,20 +61,20 @@ export class AuthController {
     @Res({ passthrough: true }) response: Response,
     @Body('refreshToken') bodyRefreshToken?: string,
   ) {
-    const refreshToken = this.getRefreshTokenFromCookie(request);
-
-    if (!refreshToken) {
-      throw new UnauthorizedException('Refresh token is required');
+    try {
+      const refreshToken = this.getRefreshTokenFromCookie(request);
+      const result = await this.authService.refresh(refreshToken);
+      this.setRefreshTokenCookie(response, result.refreshToken);
+      return {
+        accessToken: result.accessToken,
+        user: result.user,
+      };
+    } catch (error) {
+      response.clearCookie(refreshCookieName, {
+        path: '/',
+      });
+      throw error;
     }
-
-    const result = await this.authService.refresh(refreshToken);
-
-    this.setRefreshTokenCookie(response, result.refreshToken);
-
-    return {
-      accessToken: result.accessToken,
-      user: result.user,
-    };
   }
 
   @Post('logout')

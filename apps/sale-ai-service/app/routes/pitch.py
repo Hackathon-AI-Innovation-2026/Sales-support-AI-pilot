@@ -40,7 +40,7 @@ async def generate_pitch(
         )
         
         # 4. Generate content
-        pitch_text = llm.generate(prompt, max_tokens=1000)
+        pitch_text = llm.generate(prompt, max_tokens=8192)
         
         return PitchResponse(
             pitch=pitch_text.strip(),

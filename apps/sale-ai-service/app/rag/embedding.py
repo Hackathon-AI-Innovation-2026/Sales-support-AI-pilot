@@ -32,10 +32,10 @@ class EmbeddingService:
         if self.provider == "gemini":
             from google.genai import types
             
-            # Map default or empty models to text-embedding-004
+            # Map default or empty models to gemini-embedding-001
             model_name = self.model
             if not model_name:
-                model_name = "text-embedding-004"
+                model_name = "gemini-embedding-001"
                 
             response = self.client.models.embed_content(
                 model=model_name,

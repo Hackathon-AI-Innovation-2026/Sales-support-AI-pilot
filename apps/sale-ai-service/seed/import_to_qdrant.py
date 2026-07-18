@@ -186,7 +186,7 @@ def main():
     print(f"{'-'*60}")
     print(f"  Collections : {total_ok}/{len(results)} OK")
     print(f"  Total points: {total_points}")
-    print(f"  Vector dim  : {VECTOR_SIZE} (text-embedding-004)")
+    print(f"  Vector dim  : {VECTOR_SIZE} (gemini-embedding-001)")
     print(f"{'='*60}")
 
     if total_ok == len(results):

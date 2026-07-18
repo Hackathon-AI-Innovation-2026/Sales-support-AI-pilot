@@ -16,14 +16,16 @@ class QdrantService:
         filter_query: any = None
     ) -> list[dict]:
         """
-        Search for similar vectors in Qdrant DB.
+        Search for similar vectors in Qdrant DB using query_points API.
         """
-        results = self.client.search(
+        response = self.client.query_points(
             collection_name=collection,
-            query_vector=query_vector,
+            query=query_vector,
             limit=top_k,
             query_filter=filter_query
         )
+        
+        results = response.points
         
         return [
             {

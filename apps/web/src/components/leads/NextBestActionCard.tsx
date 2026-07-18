@@ -1,6 +1,13 @@
+"use client"
+
+import * as React from "react"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Phone, Mail, Calendar, Clock, AlertCircle, Compass } from "lucide-react"
+import { Phone, Mail, Calendar, Clock, AlertCircle, Compass, Loader2, RefreshCw } from "lucide-react"
+import { api } from "@/lib/api/axios"
+import { useQueryClient } from "@tanstack/react-query"
+import { toast } from "sonner"
 
 interface RecommendationAction {
   id: string
@@ -10,6 +17,7 @@ interface RecommendationAction {
 }
 
 interface NextBestActionCardProps {
+  leadId: string
   action: RecommendationAction | null
 }
 
@@ -39,7 +47,24 @@ const priorityLabels = {
   LOW: "Ưu tiên thấp",
 }
 
-export function NextBestActionCard({ action }: NextBestActionCardProps) {
+export function NextBestActionCard({ leadId, action }: NextBestActionCardProps) {
+  const queryClient = useQueryClient()
+  const [isAnalyzing, setIsAnalyzing] = React.useState(false)
+
+  const handleAnalyze = async () => {
+    try {
+      setIsAnalyzing(true)
+      await api.post(`/leads/${leadId}/next-best-action`)
+      toast.success("Đã phân tích và đề xuất hành động tiếp theo thành công!")
+      await queryClient.invalidateQueries({ queryKey: ["leads", leadId] })
+    } catch (error: any) {
+      const errMsg = error.response?.data?.message || "Lỗi khi phân tích hành động tiếp theo."
+      toast.error(errMsg)
+    } finally {
+      setIsAnalyzing(false)
+    }
+  }
+
   if (!action) {
     return (
       <Card className="bg-card border-border shadow-sm">
@@ -48,13 +73,35 @@ export function NextBestActionCard({ action }: NextBestActionCardProps) {
             <Compass className="w-4 h-4 text-primary" />
             Hành động Tiếp theo (AI Recommendation)
           </CardTitle>
+          <CardDescription className="text-xs text-muted-foreground">
+            Đề xuất hành động kinh doanh tốt nhất tiếp theo
+          </CardDescription>
         </CardHeader>
-        <CardContent className="pt-6 flex flex-col items-center justify-center text-center pb-6">
-          <AlertCircle className="w-7 h-7 text-muted-foreground/60 mb-2" />
-          <p className="text-xs font-semibold text-foreground">Chưa đề xuất hành động</p>
-          <p className="text-[10px] text-muted-foreground max-w-[200px] mt-1 leading-normal">
-            Hành động tiếp theo được AI đề xuất tự động sau khi phân tích điểm và các tương tác gần đây.
-          </p>
+        <CardContent className="pt-6 flex flex-col items-center justify-center text-center pb-6 space-y-4">
+          <AlertCircle className="w-7 h-7 text-muted-foreground/60" />
+          <div className="space-y-1">
+            <p className="text-xs font-semibold text-foreground">Chưa đề xuất hành động</p>
+            <p className="text-[10px] text-muted-foreground max-w-[200px] leading-normal">
+              Bấm nút bên dưới để AI phân tích điểm và tương tác, đề xuất hành động tốt nhất tiếp theo.
+            </p>
+          </div>
+          <Button
+            onClick={handleAnalyze}
+            disabled={isAnalyzing}
+            className="bg-primary hover:bg-primary-dark text-white text-xs font-semibold cursor-pointer h-9 px-4 rounded-lg flex items-center gap-1.5 border-0"
+          >
+            {isAnalyzing ? (
+              <>
+                <Loader2 className="w-4 h-4 animate-spin" />
+                Đang phân tích...
+              </>
+            ) : (
+              <>
+                <Compass className="w-4 h-4" />
+                Gợi ý hành động
+              </>
+            )}
+          </Button>
         </CardContent>
       </Card>
     )
@@ -70,7 +117,10 @@ export function NextBestActionCard({ action }: NextBestActionCardProps) {
             <Compass className="w-4 h-4 text-primary" />
             Hành động Tiếp theo (AI Recommendation)
           </CardTitle>
-          <Badge variant="outline" className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${priorityColors[action.priority]}`}>
+          <Badge
+            variant="outline"
+            className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${priorityColors[action.priority]}`}
+          >
             {priorityLabels[action.priority]}
           </Badge>
         </div>
@@ -103,6 +153,29 @@ export function NextBestActionCard({ action }: NextBestActionCardProps) {
             </p>
           </div>
         )}
+
+        {/* Re-analyze Button */}
+        <div className="flex justify-end pt-2 border-t border-border/50">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleAnalyze}
+            disabled={isAnalyzing}
+            className="flex items-center gap-1.5 h-8 px-3 rounded-lg border-border text-xs font-semibold cursor-pointer"
+          >
+            {isAnalyzing ? (
+              <>
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                Đang phân tích...
+              </>
+            ) : (
+              <>
+                <RefreshCw className="w-3.5 h-3.5" />
+                Phân tích lại
+              </>
+            )}
+          </Button>
+        </div>
       </CardContent>
     </Card>
   )

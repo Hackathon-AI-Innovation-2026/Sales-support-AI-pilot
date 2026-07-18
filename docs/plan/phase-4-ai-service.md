@@ -85,7 +85,7 @@ apps/sale-ai-service/
 ```python
 class EmbeddingService:
     def embed(self, text: str) -> list[float]:
-        # Dùng Gemini text-embedding-004
+        # Dùng Gemini gemini-embedding-001
         # hoặc OpenAI text-embedding-3-small
         ...
 ```
@@ -130,7 +130,7 @@ class RAGRetriever:
 ```
 
 **Checklist:**
-- [ ] `EmbeddingService` với Gemini `text-embedding-004`
+- [ ] `EmbeddingService` với Gemini `gemini-embedding-001`
 - [ ] `QdrantService` — connect, search với cosine similarity
 - [ ] `RAGRetriever` — 4 specialized retrieval functions
 - [ ] Format documents thành text block: `[Source: product_catalog]\n{content}`

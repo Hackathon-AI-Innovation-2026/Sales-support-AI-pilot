@@ -56,11 +56,15 @@ export function LeadScoreCard({ leadId, latestScore }: LeadScoreCardProps) {
 
   const score = latestScore?.score ?? null
   const probability = latestScore?.conversionProbability ?? null
-  const topFeatures = Array.isArray(latestScore?.topFeatures)
+  const rawFeatures = Array.isArray(latestScore?.topFeatures)
     ? latestScore.topFeatures
     : typeof latestScore?.topFeatures === "string"
     ? JSON.parse(latestScore.topFeatures)
     : []
+  // Normalize: each item may be a plain string OR an object { feature, importance }
+  const topFeatures: string[] = rawFeatures.map((f: any) =>
+    typeof f === "string" ? f : f?.feature ?? String(f)
+  )
 
   // Circle SVG metrics
   const radius = 38
@@ -179,7 +183,7 @@ export function LeadScoreCard({ leadId, latestScore }: LeadScoreCardProps) {
                   Yếu tố ảnh hưởng chính (Score Drivers)
                 </span>
                 <ul className="space-y-1.5">
-                  {topFeatures.map((feat: string, idx: number) => (
+                  {topFeatures.map((feat, idx) => (
                     <li key={idx} className="flex items-start gap-2 text-xs font-semibold text-foreground">
                       <div className="w-1.5 h-1.5 rounded-full bg-amber-500 mt-1.5 flex-shrink-0" />
                       <span>{featureLabels[feat] || feat}</span>

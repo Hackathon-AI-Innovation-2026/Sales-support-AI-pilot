@@ -44,7 +44,7 @@ async def generate_email(
         )
         
         # 4. Generate JSON output from LLM provider
-        llm_response = llm.generate(prompt, max_tokens=1500, is_json=True)
+        llm_response = llm.generate(prompt, max_tokens=8192, is_json=True)
         
         # 5. Parse JSON output
         data = json.loads(llm_response)

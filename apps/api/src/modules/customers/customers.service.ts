@@ -4,10 +4,15 @@ import { CreateCustomerDto } from './dtos/create-customer.dto';
 import { UpdateCustomerDto } from './dtos/update-customer.dto';
 import { GetCustomerInteractionsQueryDto } from './dtos/get-customer-interactions-query.dto';
 import { Prisma } from '@prisma/client';
+import { RecommendationService } from '../recommendation/recommendation.service';
+import { LogInteractionDto } from './dtos/log-interaction.dto';
 
 @Injectable()
 export class CustomersService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly recommendationService: RecommendationService,
+  ) {}
 
   async create(dto: CreateCustomerDto) {
     return this.prisma.customer.create({
@@ -237,6 +242,43 @@ export class CustomersService {
 
     return {
       data,
+    };
+  }
+
+  async logInteraction(customerId: string, dto: LogInteractionDto, userId: string) {
+    const customer = await this.prisma.customer.findFirst({
+      where: { id: customerId, deletedAt: null },
+    });
+
+    if (!customer) {
+      throw new NotFoundException(`Customer with ID ${customerId} not found`);
+    }
+
+    const interaction = await this.prisma.customerInteraction.create({
+      data: {
+        customerId,
+        interactionType: dto.interactionType,
+        occurredAt: new Date(),
+        metadata: {
+          note: dto.note,
+          outcome: dto.outcome,
+          loggedBy: userId,
+          source: 'MANUAL_LOG',
+        },
+      },
+    });
+
+    let nextBestAction: any = null;
+    if (dto.leadId) {
+      nextBestAction = await this.recommendationService.getNextBestAction(
+        dto.leadId,
+        dto.note,
+      );
+    }
+
+    return {
+      interaction,
+      nextBestAction,
     };
   }
 }

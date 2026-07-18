@@ -13,7 +13,7 @@ class LLMProvider:
                 raise ValueError("GEMINI_API_KEY is not set. Please configure it in .env")
             self.client = genai.Client(
                 api_key=settings.GEMINI_API_KEY,
-                http_options={"api_version": "v1"}
+                http_options={"api_version": "v1beta"}
             )
             self.model = settings.GEMINI_MODEL
         elif self.provider == "openai":
@@ -26,7 +26,7 @@ class LLMProvider:
         else:
             raise ValueError(f"Unsupported LLM provider: {settings.LLM_PROVIDER}")
 
-    def generate(self, prompt: str, max_tokens: int = 1000, is_json: bool = False) -> str:
+    def generate(self, prompt: str, max_tokens: int = 8192, is_json: bool = False) -> str:
         """
         Synchronous content generation with rate limit and JSON validation retries.
         """
@@ -66,8 +66,18 @@ class LLMProvider:
                 
                 # Validation check for JSON mode
                 if is_json:
+                    cleaned_text = text.strip()
+                    if cleaned_text.startswith("```json"):
+                        cleaned_text = cleaned_text[7:]
+                    elif cleaned_text.startswith("```"):
+                        cleaned_text = cleaned_text[3:]
+                    if cleaned_text.endswith("```"):
+                        cleaned_text = cleaned_text[:-3]
+                    cleaned_text = cleaned_text.strip()
+
                     try:
-                        json.loads(text)
+                        json.loads(cleaned_text)
+                        text = cleaned_text
                     except json.JSONDecodeError:
                         raise ValueError("LLM response did not contain a valid JSON object.")
                 
@@ -88,7 +98,7 @@ class LLMProvider:
                     print(f"[LLM Fail] LLM call failed after {max_retries} attempts: {e}")
                     raise e
 
-    async def stream(self, prompt: str, max_tokens: int = 1000) -> AsyncIterator[str]:
+    async def stream(self, prompt: str, max_tokens: int = 8192) -> AsyncIterator[str]:
         """
         Asynchronous streaming generator for chat copilot.
         """

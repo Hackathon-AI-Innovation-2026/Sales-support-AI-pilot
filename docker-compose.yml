@@ -1,0 +1,133 @@
+name: sale-ai
+
+services:
+    postgres:
+        image: postgres:16-alpine
+        restart: unless-stopped
+        environment:
+            POSTGRES_DB: ${POSTGRES_DB:-sales_support_ai_copilot}
+            POSTGRES_USER: ${POSTGRES_USER:-postgres}
+            POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+        ports:
+            - "${POSTGRES_PORT:-5432}:5432"
+        volumes:
+            - postgres_data:/var/lib/postgresql/data
+        healthcheck:
+            test:
+                [
+                    "CMD-SHELL",
+                    "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-sales_support_ai_copilot}",
+                ]
+            interval: 5s
+            timeout: 5s
+            retries: 5
+        networks:
+            - sale-ai-network
+
+    minio:
+        image: minio/minio:latest
+        restart: unless-stopped
+        command: server /data --console-address ":9001"
+        ports:
+            - "${MINIO_PORT:-9000}:9000"
+            - "${MINIO_CONSOLE_PORT:-9001}:9001"
+        environment:
+            MINIO_ROOT_USER: ${MINIO_ROOT_USER:-admin}
+            MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-admin123456}
+        volumes:
+            - minio_data:/data
+        healthcheck:
+            test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+            interval: 5s
+            timeout: 5s
+            retries: 5
+        networks:
+            - sale-ai-network
+
+    qdrant:
+        image: qdrant/qdrant:latest
+        restart: unless-stopped
+        ports:
+            - "${QDRANT_HTTP_PORT:-6333}:6333"
+            - "${QDRANT_GRPC_PORT:-6334}:6334"
+        volumes:
+            - qdrant_data:/qdrant/storage
+        networks:
+            - sale-ai-network
+
+    api:
+        build:
+            context: ./apps/api
+            dockerfile: Dockerfile
+            args:
+                - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
+        restart: unless-stopped
+        depends_on:
+            postgres:
+                condition: service_healthy
+            minio:
+                condition: service_healthy
+        networks:
+            - sale-ai-network
+
+    lead-ml-service:
+        build:
+            context: ./apps/lead-ml-service
+            dockerfile: Dockerfile
+        restart: unless-stopped
+        env_file:
+            - .env
+        networks:
+            - sale-ai-network
+
+    sale-ai-service:
+        build:
+            context: ./apps/sale-ai-service
+            dockerfile: Dockerfile
+        restart: unless-stopped
+        env_file:
+            - .env
+        depends_on:
+            - qdrant
+        networks:
+            - sale-ai-network
+
+    web:
+        build:
+            context: ./apps/web
+            dockerfile: Dockerfile
+            args:
+                - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL:-/api/v1}
+        restart: unless-stopped
+        ports:
+            - "${WEB_PORT:-3001}:3001"
+        env_file:
+            - .env
+        depends_on:
+            - api
+            - lead-ml-service
+            - sale-ai-service
+        networks:
+            - sale-ai-network
+
+    nginx:
+        image: nginx:1.25-alpine
+        restart: unless-stopped
+        ports:
+            - "${NGINX_PORT:-80}:80"
+        volumes:
+            - ./nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
+        depends_on:
+            - api
+            - web
+        networks:
+            - sale-ai-network
+
+volumes:
+    postgres_data:
+    minio_data:
+    qdrant_data:
+
+networks:
+    sale-ai-network:
+        driver: bridge

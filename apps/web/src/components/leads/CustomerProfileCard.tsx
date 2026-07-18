@@ -21,7 +21,7 @@ interface Customer {
 }
 
 interface CustomerProfileCardProps {
-  customer: Customer
+  customer?: Customer | null
 }
 
 const productLabels: Record<string, string> = {
@@ -41,9 +41,11 @@ const productColors: Record<string, string> = {
 }
 
 export function CustomerProfileCard({ customer }: CustomerProfileCardProps) {
-  const getInitials = (name: string) => {
+  const getInitials = (name?: string | null) => {
+    if (!name) return "KH"
     return name
       .split(" ")
+      .filter(Boolean)
       .map((n) => n[0])
       .slice(-2)
       .join("")
@@ -53,6 +55,31 @@ export function CustomerProfileCard({ customer }: CustomerProfileCardProps) {
   const formatIncome = (income: number | null) => {
     if (!income) return "Không có thông tin"
     return income.toLocaleString("vi-VN") + " ₫/tháng"
+  }
+
+  if (!customer) {
+    return (
+      <Card className="bg-card border-border shadow-sm">
+        <CardHeader className="flex flex-row items-center gap-4 pb-4 border-b border-border/50">
+          <Avatar className="w-12 h-12 border border-border">
+            <AvatarFallback className="bg-gradient-to-br from-primary to-blue-600 text-white font-bold text-sm">
+              KH
+            </AvatarFallback>
+          </Avatar>
+          <div className="space-y-1">
+            <CardTitle className="text-sm font-bold text-foreground">Không có thông tin</CardTitle>
+            <CardDescription className="text-[10px] text-muted-foreground font-medium uppercase tracking-wider">
+              Khách hàng cá nhân
+            </CardDescription>
+          </div>
+        </CardHeader>
+        <CardContent className="pt-4 space-y-4">
+          <div className="text-center text-xs text-muted-foreground italic py-4">
+            Chưa cập nhật thông tin chi tiết khách hàng
+          </div>
+        </CardContent>
+      </Card>
+    )
   }
 
   const ownedProducts = customer.products || []

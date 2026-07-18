@@ -45,8 +45,7 @@ export class AuthService {
       },
     );
 
-    const salt = bcrypt.genSaltSync(10);
-    const hash = bcrypt.hashSync(refreshToken, salt);
+    const hash = bcrypt.hashSync(refreshToken, 10);
     await this.usersService.updateRefreshTokenHash(user.id, hash);
 
     return {
