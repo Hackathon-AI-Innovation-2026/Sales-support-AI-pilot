@@ -24,10 +24,11 @@ export default function LeadsPage() {
   const [createModalOpen, setCreateModalOpen] = React.useState(false)
 
   // Construct request parameters for the backend API
+  // Always sort by score descending (highest to lowest)
   const params: Record<string, any> = {
     page,
     limit,
-    sortBy: "createdAt",
+    sortBy: "score",
     sortOrder: "desc",
   }
   if (status !== "ALL") params.status = status

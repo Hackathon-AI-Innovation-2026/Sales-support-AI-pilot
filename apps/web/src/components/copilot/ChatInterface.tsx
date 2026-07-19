@@ -166,34 +166,34 @@ export default function ChatInterface({ leadId }: ChatInterfaceProps) {
   }
 
   return (
-    <div className="flex flex-col flex-1 h-[420px] border border-border/55 bg-muted/5 rounded-xl overflow-hidden shadow-inner">
+    <div className="flex flex-col h-[450px] lg:h-[550px] xl:h-[600px] border border-border/55 bg-muted/5 rounded-xl overflow-hidden shadow-inner">
       {/* Scrollable messages container */}
-      <ScrollArea className="flex-1 p-3.5 space-y-4">
+      <ScrollArea className="flex-1 p-4 space-y-4">
         <div className="flex flex-col gap-4">
           {messages.map((message) => {
             const isUser = message.role === "user"
             return (
               <div
                 key={message.id}
-                className={`flex gap-2.5 max-w-[85%] ${
+                className={`flex gap-3 max-w-[85%] ${
                   isUser ? "self-end flex-row-reverse" : "self-start flex-row"
                 }`}
               >
                 {/* Avatar Icon */}
                 <div
-                  className={`size-7 rounded-full flex items-center justify-center shrink-0 border select-none ${
+                  className={`size-8 rounded-full flex items-center justify-center shrink-0 border select-none ${
                     isUser
                       ? "bg-primary/10 text-primary border-primary/20"
                       : "bg-amber-500/10 text-amber-500 border-amber-500/20"
                   }`}
                 >
-                  {isUser ? <User className="size-3.5" /> : <Sparkles className="size-3.5" />}
+                  {isUser ? <User className="size-4" /> : <Sparkles className="size-4" />}
                 </div>
 
                 {/* Message Bubble */}
-                <div className="space-y-1">
+                <div className="space-y-1.5">
                   <div
-                    className={`p-3 rounded-2xl text-xs font-semibold leading-relaxed shadow-sm ${
+                    className={`p-3.5 rounded-2xl text-sm leading-relaxed shadow-sm ${
                       isUser
                         ? "bg-primary text-white rounded-tr-none"
                         : "bg-background border border-border/60 text-foreground rounded-tl-none"
@@ -201,16 +201,16 @@ export default function ChatInterface({ leadId }: ChatInterfaceProps) {
                   >
                     {message.content === "" && isStreaming ? (
                       /* Typing Bouncing Indicator */
-                      <div className="flex items-center gap-1 py-1">
-                        <div className="size-1.5 rounded-full bg-amber-500 animate-bounce [animation-delay:-0.3s]" />
-                        <div className="size-1.5 rounded-full bg-amber-500 animate-bounce [animation-delay:-0.15s]" />
-                        <div className="size-1.5 rounded-full bg-amber-500 animate-bounce" />
+                      <div className="flex items-center gap-1.5 py-1">
+                        <div className="size-2 rounded-full bg-amber-500 animate-bounce [animation-delay:-0.3s]" />
+                        <div className="size-2 rounded-full bg-amber-500 animate-bounce [animation-delay:-0.15s]" />
+                        <div className="size-2 rounded-full bg-amber-500 animate-bounce" />
                       </div>
                     ) : (
                       <div className="whitespace-pre-wrap">{message.content}</div>
                     )}
                   </div>
-                  <span className={`text-[9px] text-muted-foreground/75 font-mono px-1 block ${isUser ? "text-right" : "text-left"}`}>
+                  <span className={`text-[10px] text-muted-foreground/75 font-mono px-1 block ${isUser ? "text-right" : "text-left"}`}>
                     {message.role === "user" ? "Sales" : "SHB AI"} · {dayjs(message.timestamp).format("HH:mm")}
                   </span>
                 </div>

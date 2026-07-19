@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { LayoutDashboard, Users, CheckSquare, Briefcase, LogOut, Sparkles } from "lucide-react"
+import { LayoutDashboard, Users, Briefcase, LogOut, Sparkles } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
@@ -22,11 +22,6 @@ const navItems = [
     label: "Customers",
     href: "/customers",
     icon: Briefcase,
-  },
-  {
-    label: "Tasks",
-    href: "/tasks",
-    icon: CheckSquare,
   },
 ]
 

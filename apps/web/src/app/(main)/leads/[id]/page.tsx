@@ -10,20 +10,26 @@ import { LeadScoreCard } from "@/components/leads/LeadScoreCard"
 import { RecommendedProductCard } from "@/components/leads/RecommendedProductCard"
 import { NextBestActionCard } from "@/components/leads/NextBestActionCard"
 import { InteractionTimeline } from "@/components/leads/InteractionTimeline"
-import { SalesTaskList } from "@/components/leads/SalesTaskList"
 import AICopilotPanel from "@/components/copilot/AICopilotPanel"
 import { CardSkeleton, TableSkeleton } from "@/components/common/Skeleton"
-import { ArrowLeft, UserCheck, MessageSquare } from "lucide-react"
+import { ArrowLeft, UserCheck, MessageSquare, Bot, X } from "lucide-react"
 import Link from "next/link"
 import { LogInteractionModal } from "@/components/leads/LogInteractionModal"
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
 
 export default function LeadDetailPage() {
   const params = useParams()
   const id = params?.id as string
 
   // State to manage the active tab in the AI Copilot Panel
-  const [activeTab, setActiveTab] = React.useState("email")
+  const [activeTab, setActiveTab] = React.useState("chat") // Default to chat tab
   const [isLogModalOpen, setIsLogModalOpen] = React.useState(false)
+  const [isCopilotModalOpen, setIsCopilotModalOpen] = React.useState(false)
 
   // Query 1: Fetch lead details (includes latest score, recommendations, actions, and tasks)
   const { data: lead, isLoading: isLeadLoading } = useQuery({
@@ -35,11 +41,14 @@ export default function LeadDetailPage() {
   const customerId = lead?.customerId
 
   // Query 2: Fetch full customer details (includes owned products and timeline interactions)
-  const { data: customer, isLoading: isCustomerLoading } = useQuery({
+  const { data: customerData, isLoading: isCustomerLoading } = useQuery({
     queryKey: ["customers", customerId],
     queryFn: () => api.get(`/customers/${customerId}`).then((res) => res.data),
     enabled: !!customerId,
   })
+
+  // Extract customer object from API response (API returns { customer, products, interactions, ... })
+  const customer = customerData?.customer ?? null
 
   const isLoading = isLeadLoading || (!!customerId && isCustomerLoading)
 
@@ -55,15 +64,12 @@ export default function LeadDetailPage() {
             <div className="h-3 w-64 bg-muted rounded animate-pulse" />
           </div>
         </div>
-        <div className="grid gap-6 lg:grid-cols-3">
+        <div className="grid gap-6 lg:grid-cols-2">
           <div className="space-y-6">
-            <CardSkeleton count={2} />
+            <CardSkeleton count={3} />
           </div>
           <div>
             <TableSkeleton rows={4} cols={3} />
-          </div>
-          <div className="space-y-6">
-            <CardSkeleton count={2} />
           </div>
         </div>
       </div>
@@ -94,8 +100,7 @@ export default function LeadDetailPage() {
   // Get the latest recommended action (Next Best Action)
   const latestAction = lead.actions && lead.actions.length > 0 ? lead.actions[0] : null
 
-  const tasks = lead.tasks || []
-  const interactions = customer?.interactions || []
+  const interactions = customerData?.interactions || []
 
   return (
     <div className="space-y-6 pb-12">
@@ -122,49 +127,74 @@ export default function LeadDetailPage() {
           </div>
         </div>
 
-        <Button
-          onClick={() => setIsLogModalOpen(true)}
-          className="bg-primary hover:bg-primary/90 text-white text-xs font-semibold cursor-pointer h-9 px-4 rounded-lg border-0 flex items-center gap-1.5"
-        >
-          <MessageSquare className="w-4 h-4" />
-          Ghi nhận tương tác
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button
+            onClick={() => setIsLogModalOpen(true)}
+            variant="outline"
+            className="text-xs font-semibold cursor-pointer h-9 px-4 rounded-lg flex items-center gap-1.5"
+          >
+            <MessageSquare className="w-4 h-4" />
+            Ghi nhận tương tác
+          </Button>
+          <Button
+            onClick={() => setIsCopilotModalOpen(true)}
+            className="bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white text-xs font-semibold cursor-pointer h-9 px-4 rounded-lg border-0 flex items-center gap-1.5 shadow-lg shadow-amber-500/20"
+          >
+            <Bot className="w-4 h-4" />
+            Mở AI Copilot
+          </Button>
+        </div>
       </div>
 
-      {/* Grid Layout (3 columns on desktop, single stack on mobile) */}
-      <div className="grid gap-6 lg:grid-cols-3 items-start">
-        {/* Left Column: Customer Profile + AI Scoring + Recommendation */}
-        <div className="space-y-6 flex flex-col">
+      {/* Grid Layout (2 columns: left cards + right timeline) */}
+      <div className="grid gap-4 lg:grid-cols-5 items-start">
+        {/* Left Column: Customer Info Cards (3/5 width) */}
+        <div className="lg:col-span-3 space-y-4">
           <CustomerProfileCard customer={customer || lead.customer} />
-          
-          <LeadScoreCard leadId={lead.id} latestScore={latestScore} />
-          
+
+          <div className="grid gap-4 sm:grid-cols-2">
+            <LeadScoreCard leadId={lead.id} latestScore={latestScore} />
+            <NextBestActionCard leadId={lead.id} action={latestAction} />
+          </div>
+
           <RecommendedProductCard
             leadId={lead.id}
             recommendation={latestRecommendation}
-            onGenerateEmailClick={() => setActiveTab("email")}
+            onGenerateEmailClick={() => {
+              setActiveTab("email")
+              setIsCopilotModalOpen(true)
+            }}
           />
-          
-          <NextBestActionCard leadId={lead.id} action={latestAction} />
         </div>
 
-        {/* Middle Column: Grouped Interaction Timeline */}
-        <div className="flex flex-col h-full">
+        {/* Right Column: Interaction Timeline (2/5 width) */}
+        <div className="lg:col-span-2">
           <InteractionTimeline interactions={interactions} />
         </div>
-
-        {/* Right Column: AI Copilot Panel + Action tasks list */}
-        <div className="space-y-6 flex flex-col">
-          <AICopilotPanel
-            leadId={lead.id}
-            activeTab={activeTab}
-            setActiveTab={setActiveTab}
-            interestedProduct={lead.interestedProduct}
-          />
-          
-          <SalesTaskList leadId={lead.id} tasks={tasks} />
-        </div>
       </div>
+
+      {/* AI Copilot Modal - Extra large and scrollable */}
+      <Dialog open={isCopilotModalOpen} onOpenChange={setIsCopilotModalOpen}>
+        <DialogContent className="max-w-[95vw] lg:max-w-[90vw] xl:max-w-[85vw] w-full h-[90vh] overflow-hidden flex flex-col p-0">
+          <DialogHeader className="flex-shrink-0 px-6 py-4 border-b bg-muted/30">
+            <DialogTitle className="flex items-center gap-2 text-lg">
+              <Bot className="w-5 h-5 text-amber-500" />
+              AI Copilot Panel
+              <span className="text-xs font-normal text-muted-foreground ml-2">
+                - Trợ lý AI SHB
+              </span>
+            </DialogTitle>
+          </DialogHeader>
+          <div className="flex-1 overflow-y-auto p-6">
+            <AICopilotPanel
+              leadId={lead.id}
+              activeTab={activeTab}
+              setActiveTab={setActiveTab}
+              interestedProduct={lead.interestedProduct}
+            />
+          </div>
+        </DialogContent>
+      </Dialog>
 
       <LogInteractionModal
         open={isLogModalOpen}
