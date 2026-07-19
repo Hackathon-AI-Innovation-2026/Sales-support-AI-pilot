@@ -3,17 +3,21 @@ import {
   NotFoundException,
   BadRequestException,
   BadGatewayException,
+  Inject,
+  forwardRef,
 } from '@nestjs/common';
 import { PrismaService } from '../../infrastructure/database/prisma.service';
 import { ConfigService } from '@nestjs/config';
 import { RecommendationService } from '../recommendation/recommendation.service';
-import { ContentType } from '@prisma/client';
+import { ContentType, ProductType } from '@prisma/client';
 import { Response } from 'express';
 import {
   GenerateEmailDto,
   GeneratePitchDto,
   ChatDto,
   GeneratedContentQueryDto,
+  ProductRecommendationDto,
+  ProductRecommendationResponseDto,
 } from './dtos/ai.dto';
 
 @Injectable()
@@ -21,6 +25,7 @@ export class AiService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly configService: ConfigService,
+    @Inject(forwardRef(() => RecommendationService))
     private readonly recommendationService: RecommendationService,
   ) {}
 
@@ -102,7 +107,7 @@ export class AiService {
           age: customer.age ?? 0,
           income: customer.income ?? 0,
           city: customer.city ?? '',
-          leadScore: score,
+          leadScore: Math.round(score), // Convert float to int
           conversionProbability: probability,
           recommendedProduct: productName,
           productReason: productReason,
@@ -113,7 +118,7 @@ export class AiService {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload),
-          signal: AbortSignal.timeout(10000), // 10s timeout
+          signal: AbortSignal.timeout(30000), // 30s timeout for LLM retries
         });
 
         if (!response.ok) {
@@ -130,6 +135,7 @@ export class AiService {
           body: data.body,
         };
       } catch (error) {
+        console.error('[AiService] generateEmail error:', error?.message ?? error);
         throw new BadGatewayException('AI Service is currently unavailable');
       }
     }
@@ -207,7 +213,7 @@ export class AiService {
       try {
         const payload = {
           customerName: customer.fullName,
-          leadScore: score,
+          leadScore: Math.round(score), // Convert float to int
           recommendedProduct: productName,
           confidence: latestRec ? latestRec.confidence : 0.8,
           productReason: productReason,
@@ -217,7 +223,7 @@ export class AiService {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload),
-          signal: AbortSignal.timeout(10000), // 10s timeout
+          signal: AbortSignal.timeout(30000), // 30s timeout for LLM retries
         });
 
         if (!response.ok) {
@@ -356,5 +362,114 @@ export class AiService {
       where,
       orderBy: { createdAt: 'desc' },
     });
+  }
+
+  /**
+   * Generate product recommendations using AI service with RAG
+   * Replaces rule-based recommendation with AI-powered recommendation
+   */
+  async generateProductRecommendations(dto: ProductRecommendationDto): Promise<ProductRecommendationResponseDto> {
+    const { leadId } = dto;
+
+    const lead = await this.prisma.lead.findFirst({
+      where: { id: leadId, deletedAt: null },
+      include: {
+        customer: {
+          include: {
+            products: true,
+            interactions: {
+              orderBy: { occurredAt: 'desc' },
+              take: 20,
+            },
+          },
+        },
+        scores: {
+          orderBy: { predictedAt: 'desc' },
+          take: 1,
+        },
+      },
+    });
+
+    if (!lead) {
+      throw new NotFoundException(`Lead with ID ${leadId} not found`);
+    }
+
+    const customer = lead.customer;
+    const latestScore = lead.scores[0];
+    const score = latestScore?.score ?? 50;
+    const probability = latestScore?.conversionProbability ?? 0.5;
+
+    // Get existing products as string array
+    const existingProducts = customer.products
+      .filter(p => p.status === 'ACTIVE')
+      .map(p => p.productType);
+
+    const aiServiceUrl = this.configService.get<string>('AI_SERVICE_URL');
+
+    if (!aiServiceUrl || aiServiceUrl === 'mock') {
+      // Fallback mock response when AI service is not available
+      const mockRecommendations = [
+        { productName: 'SHB Visa Platinum', confidence: 0.85, reason: 'Thu nhập cao, phù hợp với thẻ tín dụng cao cấp' },
+        { productName: 'SHB Saving Account', confidence: 0.75, reason: 'Có thu nhập ổn định, nên bắt đầu tiết kiệm' },
+      ];
+      return { recommendations: mockRecommendations, retrievedSources: [] };
+    }
+
+    try {
+      const payload = {
+        customer_name: customer.fullName,
+        age: customer.age ?? 0,
+        income: customer.income ?? 0,
+        city: customer.city ?? '',
+        occupation: customer.occupation ?? '',
+        salary_account: customer.salaryAccount,
+        existing_products: existingProducts,
+        interested_product: lead.interestedProduct ?? '',
+        lead_score: Math.round(score), // Convert float to int
+        conversion_probability: probability,
+      };
+
+      const response = await fetch(`${aiServiceUrl}/recommend-product`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+        signal: AbortSignal.timeout(30000), // 30s timeout for RAG + LLM
+      });
+
+      if (!response.ok) {
+        throw new Error(`AI Service returned status ${response.status}`);
+      }
+
+      const data = await response.json() as {
+        recommendations: Array<{ product_name: string; confidence: number; reason: string }>;
+        retrieved_sources?: string[];
+      };
+
+      // Save recommendations to database
+      const recsToSave = data.recommendations.map(rec => ({
+        leadId,
+        productName: rec.product_name,
+        confidence: rec.confidence,
+        reason: rec.reason,
+      }));
+
+      if (recsToSave.length > 0) {
+        await this.prisma.productRecommendation.createMany({
+          data: recsToSave,
+        });
+      }
+
+      return {
+        recommendations: data.recommendations.map(rec => ({
+          productName: rec.product_name,
+          confidence: rec.confidence,
+          reason: rec.reason,
+        })),
+        retrievedSources: data.retrieved_sources ?? [],
+      };
+    } catch (error) {
+      console.error('[AiService] Product recommendation failed:', error);
+      throw new BadGatewayException('AI Service is currently unavailable');
+    }
   }
 }

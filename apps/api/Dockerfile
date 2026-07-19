@@ -35,8 +35,9 @@ COPY --from=builder /app/package.json /app/pnpm-lock.yaml /app/prisma.config.ts 
 COPY --from=builder /app/prisma ./prisma
 COPY --from=builder /app/dist ./dist
 
-# Chỉ cài dependencies production và gỡ bỏ build tools ngay sau đó để thu nhỏ kích thước image
+# Cài dependencies production và dev dependencies (cho seed)
 RUN pnpm install --prod --frozen-lockfile && \
+    pnpm add -D tsx && \
     apk del python3 make g++ gcc build-base
 
 # Cung cấp DATABASE_URL giả lập để vượt qua bước kiểm tra cấu hình của Prisma lúc generate

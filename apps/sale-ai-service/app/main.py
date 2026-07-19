@@ -2,7 +2,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.config import settings
-from app.routes import email, pitch, chat, nba
+from app.routes import email, pitch, chat, nba, product_rec
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -35,6 +35,7 @@ app.include_router(email.router, tags=["Email Generator"])
 app.include_router(pitch.router, tags=["Pitch Generator"])
 app.include_router(chat.router, tags=["AI Copilot Chat"])
 app.include_router(nba.router, tags=["Next Best Action"])
+app.include_router(product_rec.router, tags=["Product Recommendation"])
 
 @app.get("/health")
 async def health_check():

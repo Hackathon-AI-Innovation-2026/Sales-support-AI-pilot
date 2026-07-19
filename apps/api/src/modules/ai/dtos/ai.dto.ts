@@ -1,4 +1,4 @@
-import { IsUUID, IsString, IsOptional, IsArray, IsEnum, ValidateNested } from 'class-validator';
+import { IsUUID, IsString, IsOptional, IsArray, IsEnum, ValidateNested, IsNumber, IsBoolean } from 'class-validator';
 import { ContentType } from '@prisma/client';
 import { Type } from 'class-transformer';
 
@@ -47,4 +47,28 @@ export class GeneratedContentQueryDto {
   @IsOptional()
   @IsEnum(ContentType)
   type?: ContentType;
+}
+
+// DTOs for AI-powered Product Recommendation
+export class ProductRecommendationDto {
+  @IsUUID()
+  leadId: string;
+}
+
+export class ProductRecommendationItemDto {
+  productName: string;
+  confidence: number;
+  reason: string;
+}
+
+export class ProductRecommendationResponseDto {
+  recommendations: ProductRecommendationItemDto[];
+  retrievedSources: string[];
+}
+
+// DTO for Next Best Action
+export class NextBestActionDto {
+  @IsString()
+  @IsOptional()
+  recentNoteContext?: string;
 }

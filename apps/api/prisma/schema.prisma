@@ -131,6 +131,7 @@ model CustomerInteraction {
   interactionType InteractionType
   occurredAt      DateTime        @default(now())
   metadata        Json?
+  summary         String?         // Tóm tắt nội dung tương tác bằng tiếng Việt
 
   customer Customer @relation(fields: [customerId], references: [id])
 

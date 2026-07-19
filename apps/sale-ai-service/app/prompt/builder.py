@@ -1,5 +1,5 @@
 from app.config import settings
-from app.prompt.templates import EMAIL_TEMPLATE, PITCH_TEMPLATE, CHAT_TEMPLATE, NBA_TEMPLATE
+from app.prompt.templates import EMAIL_TEMPLATE, PITCH_TEMPLATE, CHAT_TEMPLATE, NBA_TEMPLATE, PRODUCT_REC_TEMPLATE
 
 class PromptBuilder:
     @staticmethod
@@ -16,11 +16,11 @@ class PromptBuilder:
     def _truncate_context(documents: list, max_chars: int = None) -> str:
         if not documents:
             return "Không tìm thấy tài liệu liên quan."
-        
+
         limit = max_chars or settings.MAX_CONTEXT_CHARACTERS
         selected = []
         current_len = 0
-        
+
         for doc in documents:
             # Support both Document objects and dicts
             if hasattr(doc, 'content'):
@@ -29,13 +29,13 @@ class PromptBuilder:
                 content = doc.get('content', '')
             else:
                 content = str(doc)
-                
+
             if not content:
                 continue
-                
+
             separator = "\n\n" if selected else ""
             added_len = len(content) + len(separator)
-            
+
             if current_len + added_len <= limit:
                 selected.append(content)
                 current_len += added_len
@@ -44,8 +44,63 @@ class PromptBuilder:
                 if remaining > 100:
                     selected.append(content[:remaining] + "... [cắt bớt do vượt quá giới hạn]")
                 break
-                
+
         return "\n\n".join(selected)
+
+    @staticmethod
+    def build_product_rec_prompt(
+        customer_name: str,
+        age: int,
+        income: float,
+        city: str,
+        occupation: str,
+        salary_account: bool,
+        existing_products: list,
+        interested_product: str,
+        lead_score: int,
+        conversion_probability: float,
+        documents: list
+    ) -> str:
+        # Sanitize string inputs
+        cust_name = PromptBuilder._sanitize_string(customer_name, "Khách hàng")
+        cust_city = PromptBuilder._sanitize_string(city, "Chưa xác định")
+        occ = PromptBuilder._sanitize_string(occupation, "Chưa xác định")
+        interested = PromptBuilder._sanitize_string(interested_product, "Chưa xác định")
+
+        # Convert numeric values safely
+        try:
+            income_val = int(float(income)) if income is not None else 0
+        except (ValueError, TypeError):
+            income_val = 0
+
+        try:
+            prob_val = float(conversion_probability) if conversion_probability is not None else 0.0
+        except (ValueError, TypeError):
+            prob_val = 0.0
+
+        score_val = lead_score if lead_score is not None else 0
+        salary_str = "Có" if salary_account else "Không"
+
+        # Format existing products
+        existing_str = ", ".join(existing_products) if existing_products else "Không có sản phẩm nào"
+        existing_str = PromptBuilder._sanitize_string(existing_str)
+
+        # Format context
+        context = PromptBuilder._truncate_context(documents)
+
+        return PRODUCT_REC_TEMPLATE.format(
+            customer_name=cust_name,
+            age=age if age is not None else "Chưa xác định",
+            income=income_val,
+            city=cust_city,
+            occupation=occ,
+            salary_account=salary_str,
+            existing_products=existing_str,
+            interested_product=interested,
+            lead_score=score_val,
+            probability=prob_val,
+            retrieved_context=context
+        )
 
     @staticmethod
     def build_email_prompt(

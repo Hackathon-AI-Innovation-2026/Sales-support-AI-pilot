@@ -143,7 +143,10 @@ export class RecommendationService {
       include: {
         customer: {
           include: {
-            interactions: true,
+            interactions: {
+              orderBy: { occurredAt: 'desc' },
+              take: 20,
+            },
           },
         },
         scores: {
@@ -162,24 +165,14 @@ export class RecommendationService {
     const score = latestScoreRecord?.score ?? 50;
     const probability = latestScoreRecord?.conversionProbability ?? 0.5;
 
-    const emailOpenCount = customer.interactions.filter(
-      (i) => i.interactionType === InteractionType.EMAIL_OPEN,
-    ).length;
-    const emailClickCount = customer.interactions.filter(
-      (i) => i.interactionType === InteractionType.EMAIL_CLICK,
-    ).length;
-    const websiteVisitCount = customer.interactions.filter(
-      (i) => i.interactionType === InteractionType.WEBSITE_VISIT,
-    ).length;
-    const loanInquiryCount = customer.interactions.filter(
-      (i) => i.interactionType === InteractionType.LOAN_INQUIRY,
-    ).length;
-    const branchVisitCount = customer.interactions.filter(
-      (i) => i.interactionType === InteractionType.BRANCH_VISIT,
-    ).length;
-    const callCount = customer.interactions.filter(
-      (i) => i.interactionType === InteractionType.CALL,
-    ).length;
+    // Build interaction summary text from database summaries
+    const interactionSummaries = customer.interactions
+      .filter(i => i.summary)  // Only include interactions with summaries
+      .map(i => {
+        const date = new Date(i.occurredAt).toLocaleDateString('vi-VN');
+        return `[${date}] ${i.interactionType}: ${i.summary}`;
+      })
+      .join('\n');
 
     const aiServiceUrl = this.configService.get<string>('AI_SERVICE_URL');
 
@@ -191,6 +184,14 @@ export class RecommendationService {
     };
 
     if (!aiServiceUrl || aiServiceUrl === 'mock') {
+      // Mock fallback still uses rule-based approach (kept for compatibility)
+      const emailOpenCount = customer.interactions.filter(
+        (i) => i.interactionType === InteractionType.EMAIL_OPEN,
+      ).length;
+      const loanInquiryCount = customer.interactions.filter(
+        (i) => i.interactionType === InteractionType.LOAN_INQUIRY,
+      ).length;
+
       let action: RecommendedAction;
       let priority: Priority;
       let reason = '';
@@ -229,19 +230,18 @@ export class RecommendationService {
       }
     } else {
       try {
+        // Use AI service with interaction summaries
+        // Combine AI-generated summaries with any manual context provided
+        const combinedText = [
+          interactionSummaries,
+          recentNoteContext ? `Ghi chú bổ sung: ${recentNoteContext}` : '',
+        ].filter(Boolean).join('\n\n');
+
         const payload = {
-          leadScore: score,
+          leadScore: Math.round(score), // Convert float to int
           conversionProbability: probability,
           interestedProduct: lead.interestedProduct ?? 'Chưa xác định',
-          interactions: {
-            email_open_count: emailOpenCount,
-            email_click_count: emailClickCount,
-            website_visit_count: websiteVisitCount,
-            loan_inquiry_count: loanInquiryCount,
-            branch_visit_count: branchVisitCount,
-            call_count: callCount,
-          },
-          recentInteractionsText: recentNoteContext ?? null,
+          recentInteractionsText: combinedText || 'Khách hàng chưa có tương tác nào được ghi nhận',
         };
 
         const response = await fetch(`${aiServiceUrl}/next-best-action`, {

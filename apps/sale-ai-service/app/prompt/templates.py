@@ -1,4 +1,38 @@
-# Prompt templates for Email, Pitch, Chat, and Next Best Action
+# Prompt templates for Email, Pitch, Chat, Next Best Action, and Product Recommendation
+
+PRODUCT_REC_TEMPLATE = """Bạn là chuyên gia tư vấn sản phẩm tài chính ngân hàng SHB. Dựa trên thông tin khách hàng và dữ liệu sản phẩm từ knowledge base, hãy đề xuất các sản phẩm phù hợp nhất.
+
+THÔNG TIN KHÁCH HÀNG:
+- Tên: {customer_name}
+- Tuổi: {age}
+- Thu nhập: {income:,.0f} VND/tháng
+- Thành phố: {city}
+- Nghề nghiệp: {occupation}
+- Có tài khoản nhận lương: {salary_account}
+- Sản phẩm đã sử dụng: {existing_products}
+- Sản phẩm quan tâm: {interested_product}
+- Lead Score: {lead_score}/100 (Xác suất chuyển đổi: {probability:.0%})
+
+THÔNG TIN SẢN PHẨM VÀ KHUYẾN MÃI TỪ KNOWLEDGE BASE:
+{retrieved_context}
+
+YÊU CẦU:
+1. Phân tích hồ sơ khách hàng và so sánh với các sản phẩm có trong knowledge base
+2. Đề xuất TỐI ĐA 3 sản phẩm phù hợp nhất với khách hàng
+3. Với mỗi sản phẩm, giải thích TẠI SAO sản phẩm đó phù hợp dựa trên thông tin cụ thể của khách hàng
+4. Độ tin cậy (confidence) nên phản ánh mức độ phù hợp thực tế (0.5-0.95)
+5. Không đề xuất sản phẩm khách hàng đã sở hữu
+
+Trả về JSON:
+{{
+  "recommendations": [
+    {{
+      "product_name": "Tên sản phẩm",
+      "confidence": 0.85,
+      "reason": "Giải thích chi tiết tại sao sản phẩm này phù hợp với khách hàng này, dựa trên thông tin cụ thể..."
+    }}
+  ]
+}}"""
 
 EMAIL_TEMPLATE = """Bạn là chuyên gia tư vấn ngân hàng SHB. Hãy viết một email marketing cá nhân hóa bằng tiếng Việt.
 
@@ -54,28 +88,39 @@ CÂU HỎI: {message}
 
 Trả lời bằng tiếng Việt. Nếu không chắc, nói rõ."""
 
-NBA_TEMPLATE = """Phân tích lead và đề xuất hành động tiếp theo.
+NBA_TEMPLATE = """Bạn là chuyên gia tư vấn bán hàng ngân hàng SHB. Phân tích toàn diện và đề xuất hành động tiếp theo tối ưu.
 
-LEAD SCORE: {lead_score}/100 (Probability: {probability:.0%})
-SẢN PHẨM QUAN TÂM: {interested_product}
+THÔNG TIN LEAD:
+- Lead Score: {lead_score}/100 (Xác suất chuyển đổi: {probability:.0%})
+- Sản phẩm quan tâm: {interested_product}
 
-TƯƠNG TÁC GẦN ĐÂY:
+LỊCH SỬ TƯƠNG TÁC (đã tóm tắt):
 {recent_interactions}
 
-QUY TRÌNH BÁN HÀNG SHB / HƯỚNG DẪN:
+HƯỚNG DẪN BÁN HÀNG VÀ QUY TRÌNH SHB:
 {retrieved_context}
 
-Hành động dự kiến từ hệ thống: {action} ({priority})
-
 YÊU CẦU:
-1. Đọc kỹ phần TƯƠNG TÁC GẦN ĐÂY. Nếu có ghi chú cuộc trò chuyện từ Sales, hãy ưu tiên bám sát nội dung ghi chú đó để đưa ra đề xuất hành động tiếp theo thực tế nhất.
-2. Giải thích rõ tại sao hành động này là tối ưu.
-3. Soạn thảo nội dung gợi ý (email mẫu, kịch bản gọi điện hoặc dàn bài cuộc hẹn) chi tiết và phù hợp nhất với trạng thái hiện tại.
+1. PHÂN TÍCH kỹ lịch sử tương tác để hiểu hành vi và nhu cầu của khách hàng
+2. QUYẾT ĐỊNH hành động tiếp theo tối ưu dựa trên:
+   - CALL: Gọi điện trực tiếp khi khách hàng có dấu hiệu sẵn sàng (đã hỏi nhiều, đã ghé chi nhánh, đã mở email nhiều lần)
+   - EMAIL: Gửi email khi cần cung cấp thông tin chi tiết hoặc theo dõi
+   - MEETING: Hẹn gặp trực tiếp khi cần tư vấn chuyên sâu hoặc chốt deal
+   - WAIT: Chờ theo dõi khi chưa có đủ tín hiệu rõ ràng từ khách hàng
+3. Xác định PRIORITY phù hợp:
+   - HIGH: Lead nóng, khách hàng đã thể hiện rõ quan tâm
+   - MEDIUM: Lead tiềm năng, cần nuôi dưỡng
+   - LOW: Lead mới hoặc chưa có tương tác đáng kể
+4. GIẢI THÍCH chi tiết tại sao đề xuất hành động này
+5. SOẠN THẢO nội dung gợi ý phù hợp với hành động đã chọn:
+   - CALL: Kịch bản gọi điện tự nhiên, thân thiện
+   - EMAIL: Email ngắn gọn với subject hấp dẫn
+   - MEETING: Dàn bài cuộc hẹn với mục tiêu rõ ràng
 
 Trả về JSON:
 {{
-  "action": "{action}",
-  "priority": "{priority}",
-  "reason": "...",
-  "suggestedContent": "..."
+  "action": "CALL | EMAIL | MEETING | WAIT",
+  "priority": "HIGH | MEDIUM | LOW",
+  "reason": "Giải thích chi tiết tại sao đây là hành động tối ưu, dựa trên phân tích cụ thể...",
+  "suggestedContent": "Nội dung gợi ý phù hợp với hành động đã chọn..."
 }}"""
